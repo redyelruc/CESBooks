@@ -34,7 +34,7 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # Configure CS50 Library to use SQLite database
-#'mysql://<your_username>:<your_mysql_password>@<your_mysql_hostname>/<your_database_name>'
+#'mysql://<your_student_id>:<your_mysql_password>@<your_mysql_hostname>/<your_database_name>'
 db = SQL(os.environ['DATABASE'])
 
 @app.route("/")
@@ -42,26 +42,24 @@ db = SQL(os.environ['DATABASE'])
 def index():
     """Show all books"""
 
-    rows = db.execute("SELECT * FROM books WHERE stock_new > 0 OR stock_used > 0 ORDER BY level, title")
-    bookstock =[]
+    rows = db.execute("SELECT * FROM book ORDER BY title")
+    books =[]
     for row in rows:
-        bookstock.append([row['title'], row['level'], row['edition'], row['isbn'], row['stock_new'], row['stock_used']])
-    return render_template("index.html", bookstock=bookstock)
+        books.append([row['isbn'], row['title'], row['author'], row['edition'], row['copies']])
+    return render_template("index.html", books=books)
 
 
 @app.route("/transactions")
 @login_required
 def transactions():
     """Show history of transactions"""
-    # get transaction history
-    rows = db.execute("SELECT * FROM transactions WHERE DATE(date) = CURDATE() ORDER BY date DESC")
-    history =[]
+    rows = db.execute("SELECT * FROM transaction WHERE DATE(date) = CURDATE() ORDER BY date DESC")
+    transaction_history =[]
     for row in rows:
-        history.append([row['date'], row['transaction_type'], row['book_id'],
-                        row['price'], row['student'],row['user_id']])
+        transaction_history.append([row['date'], row['transaction_type'], row['book_isbn'], row['student_id']])
 
     # redirect user to index page
-    return render_template("transactions.html", transactions=history)
+    return render_template("transactions.html", transactions=transaction_history)
 
 
 
@@ -75,21 +73,21 @@ def login():
     # User reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
 
-        # Ensure username was submitted
-        if not request.form.get("username"):
-            return apology("must provide username", 403)
+        # Ensure student_id was submitted
+        if not request.form.get("student_id"):
+            return apology("must provide student_id", 403)
 
         # Ensure password was submitted
         elif not request.form.get("password"):
             return apology("must provide password", 403)
 
-        # Query database for username
-        rows = db.execute("SELECT * FROM users WHERE username = :username",
-                          username=request.form.get("username"))
+        # Query database for student_id
+        rows = db.execute("SELECT * FROM student WHERE id = :student_id",
+                          student_id=request.form.get("student_id"))
 
-        # Ensure username exists and password is correct
+        # Ensure student_id exists and password is correct
         if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
-            return apology("invalid username and/or password", 403)
+            return apology("invalid details", 403)
 
         # Remember which user has logged in
         session["user_id"] = rows[0]["id"]
@@ -110,24 +108,24 @@ def register():
         return render_template("register.html")
     else:
         # register the new user
-        # check username is not blank
-        if not request.form.get("username"):
-            return apology("must provide username", 403)
+        # check student_id is not blank
+        if not request.form.get("student_id"):
+            return apology("must provide student_id", 403)
         # check password id not blank
         if not request.form.get("password"):
             return apology('must provide password', 403)
-        # check username is unique
-        if db.execute("SELECT * FROM users WHERE username = :username", username=request.form.get("username")):
-            return apology("username already taken", 403)
+        # check student_id is unique
+        if db.execute("SELECT * FROM student WHERE id = :student_id", student_id=request.form.get("student_id")):
+            return apology("you already have an account", 403)
         # check password and confirmation are same
         if request.form.get("password") != request.form.get("confirm-password"):
             return apology("password and confirmation do not match", 403)
         # hash the password and create row in db
-        db.execute("INSERT INTO users(username, hash) VALUES (:username, :hash)", username=request.form.get("username"),
+        db.execute("INSERT INTO student(id, hash) VALUES (:student_id, :hash)", student_id=request.form.get("student_id"),
                    hash=generate_password_hash(request.form.get("password")))
 
         # make sure that the new user is logged in
-        rows = db.execute("SELECT * FROM users WHERE username = :username", username=request.form.get("username"))
+        rows = db.execute("SELECT * FROM student WHERE id = :student_id", student_id=request.form.get("student_id"))
         # set the session so we know who is logged in
         session["user_id"] = rows[0]["id"]
         return redirect("/")
@@ -147,103 +145,55 @@ def logout():
 @app.route("/sell", methods=["GET", "POST"])
 @login_required
 def sell():
-    """Sell a book"""
-    rows = db.execute("SELECT * FROM books WHERE stock_new > 0 OR stock_used > 0 ORDER BY level")
-    bookstock =[]
-    transaction = "SELL"
+    """Loan a book"""
+    rows = db.execute("SELECT * FROM book ORDER BY title")
+    books =[]
+    transaction = "BORROW"
     for row in rows:
-        bookstock.append([row['title'], row['level'], row['edition'], row['isbn'], row['stock_new'], row['stock_used'], row['price_new'], row['price_used']])
+        books.append([row['isbn'], row['title'], row['author'], row['edition'], row['copies']])
     if request.method == "GET":
-        return render_template("sell.html", stocks=bookstock)
+        return render_template("borrow.html", books=books)
     else:
         isbn = request.form.get("isbn")
-        used = request.form.get("used")
-        number_to_sell = int(request.form.get("number_to_sell"))
-        student = request.form.get("student")
-        # check database to make sure book is in stock
-        if used:
-            book_in_stock = db.execute("SELECT stock_used, price_used from books WHERE isbn = :isbn", isbn = isbn)
-        else:
-            book_in_stock = db.execute("SELECT stock_new, price_new from books WHERE isbn = :isbn", isbn = isbn)
+        student_id = request.form.get("student_id")
+        # check database to make sure book is available
+        copies_available = db.execute("SELECT copies from book WHERE isbn = :isbn", isbn = isbn)
 
-        if not book_in_stock:
-            return apology('sorry, out of stock')
-        elif used:
-            db.execute("UPDATE books SET stock_used = :books_left WHERE isbn = :isbn", isbn = isbn,
-                    books_left = int(book_in_stock[0]["stock_used"]) - 1)
-            db.execute("INSERT INTO transactions(transaction_type, user_id, book_id, price, date, student) VALUES (:trans, :user, :book, :price, :date, :student)",
-                        trans=transaction, user=session["user_id"], book=isbn, price=(book_in_stock[0]["price_used"]), date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'), student=student)
+        if not copies_available:
+            return apology('Sorry, no copies available')
         else:
-            db.execute("UPDATE books SET stock_new = :books_left WHERE isbn = :isbn", isbn = isbn,
-                    books_left = int(book_in_stock[0]["stock_new"]) - 1)
-            db.execute("INSERT INTO transactions(transaction_type, user_id, book_id, price, date, student) VALUES (:trans, :user, :book, :price, :date, :student)",
-                    trans=transaction, user=session["user_id"], book=isbn, price=(book_in_stock[0]["price_new"]), date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'), student=student)
-        flash("Sold!")
+            db.execute("UPDATE book SET copies = :books_left WHERE isbn = :isbn", isbn = isbn,
+                    books_left = int(copies_available[0]) - 1)
+            db.execute("INSERT INTO transaction(transaction_type, student_id, book_isbn, date) VALUES (:trans, :student, :isbn, :date)",
+                        trans=transaction, student=session["user_id"], isbn=isbn, date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+
+        flash("Book has been loaned!")
         return redirect("/")
 
 
 @app.route("/buy", methods=["GET", "POST"])
 @login_required
 def buy():
-    """Buy a book"""
+    """Return a book"""
     if request.method == "GET":
         return render_template("buy.html")
     else:
         isbn = request.form.get("isbn")
-        student = request.form.get("student")
-        used = request.form.get("used")
-        transaction = "BUY"
+        student = request.form.get("student_id")
+        transaction = "RETURN"
         # get current stock level
-        book_in_stock = db.execute("SELECT * from books WHERE isbn = :isbn", isbn = isbn)
+        copies_available = db.execute("SELECT * from book WHERE isbn = :isbn", isbn = isbn)
         try:
             # add one to stock level and write to database
-            db.execute("UPDATE books SET stock_used = :books WHERE isbn = :isbn", isbn = isbn, books = book_in_stock[0]["stock_used"] + 1)        
+            db.execute("UPDATE books SET copies = :copies WHERE isbn = :isbn", isbn = isbn, copiess = copies_available[0] + 1)
             # record in transactions database
-            db.execute("INSERT INTO transactions(transaction_type, user_id, book_id, price, date, student) VALUES (:trans, :user, :book, :price, :date, :student)",
-                            trans=transaction, user=session["user_id"], book=isbn, price= -10, date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'), student=student)
-            flash("Bought!")
+            db.execute("INSERT INTO transaction(transaction_type, student_id, book_isbn, date) VALUES (:trans, :student, :isbn, :date)",
+                            trans=transaction, student=session["user_id"], isbn=isbn, date=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            flash("Book has been returned!")
             return redirect("/")
         except IndexError:
-            flash("Not in database. Please add details of new book.")
-            return render_template("add.html")
-
-
-
-@app.route("/swap", methods=["GET", "POST"])
-@login_required
-def swap():
-    if request.method == "GET":
-        # Display form for user to enter stock to search
-        return render_template("swap.html")
-    else:
-        book_in = request.form.get("book_in")
-        book_in_used = request.form.get("book_in_used")
-        book_out = request.form.get("book_out")
-        book_out_used = request.form.get("book_out_used")
-        student = request.form.get("student")
-        # update table by adding book coming in
-        if book_in_used:
-            stock_used = db.execute("SELECT stock_used from books WHERE isbn = :isbn", isbn = book_in)[0]['stock_used']
-            db.execute("UPDATE books SET stock_used = :number WHERE isbn = :isbn", number = stock_used + 1, isbn = book_in)
-        else:    
-            stock_new = db.execute("SELECT stock_new from books WHERE isbn = :isbn", isbn = book_in)[0]['stock_new']
-            db.execute("UPDATE books SET stock_new = :number WHERE isbn = :isbn", number = stock_new + 1, isbn = book_in)
-
-        # update table by subtracting book going out
-        if book_out_used:
-            stock_used = db.execute("SELECT stock_used from books WHERE isbn = :isbn", isbn = book_out)[0]['stock_used']
-            db.execute("UPDATE books SET stock_used = :number WHERE isbn = :isbn", number = stock_used -1, isbn = book_out)
-        else:    
-            stock_new = db.execute("SELECT stock_new from books WHERE isbn = :isbn", isbn = book_out)[0]['stock_new']
-            db.execute("UPDATE books SET stock_new = :number WHERE isbn = :isbn", number = stock_new - 1, isbn = book_out)
-        
-        #update the transactions table
-        db.execute("INSERT INTO transactions(transaction_type, user_id, book_id, price, date, student) VALUES (:trans, :user, :book, :price, :date, :student)",
-                    trans="SWAP IN", user=session["user_id"], book=book_in, price=0, date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'), student=student)
-        db.execute("INSERT INTO transactions(transaction_type, user_id, book_id, price, date, student) VALUES (:trans, :user, :book, :price, :date, :student)",
-                    trans="SWAP OUT", user=session["user_id"], book=book_out, price=0, date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'), student=student)
-        flash('Swap completed')
-        return redirect('/')
+            apology("Not in database.")
+            return
 
 
 @app.route("/add", methods=["GET", "POST"])
