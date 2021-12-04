@@ -142,10 +142,10 @@ def logout():
     return redirect("/")
 
 
-@app.route("/sell", methods=["GET", "POST"])
+@app.route("/borrow", methods=["GET", "POST"])
 @login_required
-def sell():
-    """Loan a book"""
+def borrow():
+    """Borrow a book"""
     rows = db.execute("SELECT * FROM book ORDER BY title")
     books =[]
     transaction = "BORROW"
@@ -171,15 +171,14 @@ def sell():
         return redirect("/")
 
 
-@app.route("/buy", methods=["GET", "POST"])
+@app.route("/return", methods=["GET", "POST"])
 @login_required
-def buy():
+def return_book():
     """Return a book"""
     if request.method == "GET":
         return render_template("buy.html")
     else:
         isbn = request.form.get("isbn")
-        student = request.form.get("student_id")
         transaction = "RETURN"
         # get current stock level
         copies_available = db.execute("SELECT * from book WHERE isbn = :isbn", isbn = isbn)
