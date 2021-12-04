@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Borrow Books
+{% endblock %}
+
+{% block main %}
+
+    <table class="table">
+      <thead class="thead-light">
+        <tr>
+          <th scope="col">ISBN</th>
+          <th scope="col">Title </th>
+          <th scope="col">Author</th>
+          <th scope="col">Edition</th>
+          <th scope="col">Copies</th>
+        </tr>
+      </thead>
+      <tbody>
+    {% for row in stocks %}
+      <tr>
+        <td>{{ row[0] }}</td>
+        <td>{{ row[1] }}</td>
+        <td>{{ row[2] }}</td>
+        <td>{{ row[3] }}</td>
+        <td>{{ row[4] }}</td>
+      </tr>
+    {% endfor %}
+      </tbody>
+    </table>
+
+      </tbody>
+    </table>
+
+        <form action="/borrow" method="post">
+        <div class="form-group">
+            <input autocomplete="off" autofocus class="form-control" name="isbn" placeholder="ISBN" type="text" onkeyup="EnableDisable(isbn, student)">
+        </div>
+        <button class="btn btn-primary" id="submit" type="submit" disabled = true>Borrow Book</button>
+    </form>
+
+<script type="text/javascript">
+    function EnableDisable(isbn, student) {
+        //Reference the Button.
+        var btnSubmit = document.getElementById("submit");
+        //Verify the ISBN has 13 characters
+        if (isbn.value.trim().length == 13) {
+            btnSubmit.disabled = false;
+        } else {
+            btnSubmit.disabled = true;
+        }
+    };
+</script>
+
+{% endblock %}
