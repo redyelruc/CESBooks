@@ -16,7 +16,7 @@ services:
     command: --innodb-flush-method=fsync --innodb-use-native-aio=0
 
   app:
-    image: redyelruc/ces-books:1.1
+    image: redyelruc/ces-books:2.6
     environment:
       DATABASE: mysql://${DB_APPLICATION_USER}:${DB_APPLICATION_PASSWORD}@db:3306/${DB_NAME}
     ports:

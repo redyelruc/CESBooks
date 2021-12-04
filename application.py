@@ -187,7 +187,7 @@ def return_book():
             db.execute("UPDATE books SET copies = :copies WHERE isbn = :isbn", isbn = isbn, copiess = copies_available[0] + 1)
             # record in transactions database
             db.execute("INSERT INTO transaction(transaction_type, student_id, book_isbn, date) VALUES (:trans, :student, :isbn, :date)",
-                            trans=transaction, student=session["user_id"], isbn=isbn, date=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                            trans=transaction, student=session["user_id"], isbn=isbn, date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             flash("Book has been returned!")
             return redirect("/")
         except IndexError:
