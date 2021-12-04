@@ -1,8 +1,8 @@
 ----
 -- phpLiteAdmin database dump (http://www.phpliteadmin.org/)
 -- phpLiteAdmin version: 1.9.7.1
--- Exported: 11:56am on July 27, 2020 (UTC)
--- database file: /home/ubuntu/final/books/finance.db
+-- Exported: 11:56am on July 27, 2021 (UTC)
+-- database file: /home/ubuntu/final/book/finance.db
 ----
 BEGIN TRANSACTION;
 
@@ -14,69 +14,63 @@ DROP TABLE IF EXISTS "users";
 ----
 -- Table structure for users
 ----
-CREATE TABLE 'users' ('id' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 'username' TEXT NOT NULL, 'hash' TEXT NOT NULL);
+CREATE TABLE 'student' ('id' varchar(20) PRIMARY KEY NOT NULL, 'name' varchar(30) NOT NULL, 'hash' TEXT NOT NULL);
 
 ----
 -- Data dump for users, a total of 2 rows
 ----
-INSERT INTO "users" ("id","username","hash") VALUES ('1','Aidan','pbkdf2:sha256:150000$ts8TeHZ0$c0e79f0fa4a812fc081f7a0a9c5c88b7e9099d6d3b069be237321e9460f7c649');
-INSERT INTO "users" ("id","username","hash") VALUES ('2','Rob','pbkdf2:sha256:150000$VSoXKJv9$a34e5c53fbdbe525b21c3a85e1bdd48c488b2afbb9feda27634df780eb6d1cb6');
+INSERT INTO "student" ("id","name","hash") VALUES ('123456789','Aidan','pbkdf2:sha256:150000$ts8TeHZ0$c0e79f0fa4a812fc081f7a0a9c5c88b7e9099d6d3b069be237321e9460f7c649');
+INSERT INTO "student" ("id","name","hash") VALUES ('222333444','Rob','pbkdf2:sha256:150000$VSoXKJv9$a34e5c53fbdbe525b21c3a85e1bdd48c488b2afbb9feda27634df780eb6d1cb6');
 
 ----
--- Drop table for books
+-- Drop table for book
 ----
-DROP TABLE IF EXISTS "books";
+DROP TABLE IF EXISTS "book";
 
 ----
--- Table structure for books
+-- Table structure for book
 ----
-CREATE TABLE 'books' ('isbn' varchar(13) NOT NULL, 'title' varchar(100), 'level' varchar(25), 'edition' smallint,'stock_new' integer,'stock_used' integer,'price_new' real,'price_used' real);
+CREATE TABLE 'book' ('isbn' PRIMARY KEY char(13) NOT NULL, 'title' varchar(100), 'author' varchar(100), 'edition' varchar(10),'copies' integer);
 
 ----
--- Data dump for books, a total of 5 rows
+-- Data dump for book, a total of 5 rows
 ----
-INSERT INTO "books" ("isbn","title","level","edition","stock_new","stock_used","price_new","price_used") VALUES ('9780194713535','New Headway','C1','3','12','4','30.0','15.0');
-INSERT INTO "books" ("isbn","title","level","edition","stock_new","stock_used","price_new","price_used") VALUES ('9780194771818','New Headway','B2','3','1','2','30.0','15.0');
-INSERT INTO "books" ("isbn","title","level","edition","stock_new","stock_used","price_new","price_used") VALUES ('9781447936879','Cutting Edge','B1','3','11','3','32.0','15.0');
-INSERT INTO "books" ("isbn","title","level","edition","stock_new","stock_used","price_new","price_used") VALUES ('9783125404243','Empower','B1','1','10','9','32.0','15.0');
-INSERT INTO "books" ("isbn","title","level","edition","stock_new","stock_used","price_new","price_used") VALUES ('9781447936909','Cutting Edge','A2-B1','3','5','3','32.0','15.0');
+INSERT INTO "book" ("isbn","title","author","edition","copies") VALUES ('9780194713535','New Headway C1','Soars, John','5th',2);
+INSERT INTO "book" ("isbn","title","author","edition","copies") VALUES ('9780194771818','New Headway B2','Soars, John','5th',1);
+INSERT INTO "book" ("isbn","title","author","edition","copies") VALUES ('9781447936879','Cutting Edge B1','Cunningham, Sarah','4th',1);
+INSERT INTO "book" ("isbn","title","author","edition","copies") VALUES ('9783125404243','Empower B1','Doff, Adrian','1st',2);
+INSERT INTO "book" ("isbn","title","author","edition","copies") VALUES ('9781447936909','Cutting Edge A2-B1','Cunningham, Sarah','5th',3);
 
 ----
--- Drop table for transactions
+-- Drop table for transaction
 ----
-DROP TABLE IF EXISTS "transactions";
+DROP TABLE IF EXISTS "transaction";
 
 ----
--- Table structure for transactions
+-- Table structure for transaction
 ----
-CREATE TABLE 'transactions' ('transaction_type' text NOT NULL,'user_id' integer,'book_id' text, 'price' real,'student' text,'date' date DEFAULT CURRENT_DATE  );
+CREATE TABLE 'transaction' ('transaction_type' text NOT NULL,'student_id' varchar(20),'book_isbn' char(13), 'date' date DEFAULT CURRENT_DATE  );
 
 ----
--- Data dump for transactions, a total of 15 rows
+-- Data dump for transaction, a total of 7 rows
 ----
-INSERT INTO "transactions" ("transaction_type","user_id","book_id","price","student","date") VALUES ('SELL','2','9780194713535','30.0','Frank','2020-07-26');
-INSERT INTO "transactions" ("transaction_type","user_id","book_id","price","student","date") VALUES ('SELL','2','9781447936879','32.0','Mohammed R.','2020-07-26');
-INSERT INTO "transactions" ("transaction_type","user_id","book_id","price","student","date") VALUES ('SWAP IN','2','9780194713535','0.0','Hye Jung','2020-07-26');
-INSERT INTO "transactions" ("transaction_type","user_id","book_id","price","student","date") VALUES ('SWAP OUT','2','9781447936879','0.0','Hye Jung','2020-07-26');
-INSERT INTO "transactions" ("transaction_type","user_id","book_id","price","student","date") VALUES ('SWAP IN','2','9780194713535','0.0','Franco Pardini','2020-07-26');
-INSERT INTO "transactions" ("transaction_type","user_id","book_id","price","student","date") VALUES ('SWAP OUT','2','9781447936879','0.0','Franco Pardini','2020-07-26');
-INSERT INTO "transactions" ("transaction_type","user_id","book_id","price","student","date") VALUES ('BUY','2','9780194713535','-10.0','Mary','2020-07-26');
-INSERT INTO "transactions" ("transaction_type","user_id","book_id","price","student","date") VALUES ('SELL','2','9781447936879','15.0','Thalita','2020-07-26');
-INSERT INTO "transactions" ("transaction_type","user_id","book_id","price","student","date") VALUES ('SELL','2','9780194713535','15.0','Malachy','2020-07-26');
-INSERT INTO "transactions" ("transaction_type","user_id","book_id","price","student","date") VALUES ('SELL','2','9781447936909','15.0','Rampage','2020-07-26');
-INSERT INTO "transactions" ("transaction_type","user_id","book_id","price","student","date") VALUES ('BUY','2','9780194713535','-10.0','Frank','2020-07-26');
-INSERT INTO "transactions" ("transaction_type","user_id","book_id","price","student","date") VALUES ('SWAP IN','2','9781447936879','0.0','Walter W.','2020-07-26');
-INSERT INTO "transactions" ("transaction_type","user_id","book_id","price","student","date") VALUES ('SWAP OUT','2','9780194713535','0.0','Walter W.','2020-07-26');
-INSERT INTO "transactions" ("transaction_type","user_id","book_id","price","student","date") VALUES ('SELL','2','9781447936909','15.0','Mario Yamasaki','2020-07-27');
-INSERT INTO "transactions" ("transaction_type","user_id","book_id","price","student","date") VALUES ('SELL','2','9783125404243','15.0','Herb Dean','2020-07-27');
+INSERT INTO "transaction" ("transaction_type","student_id","book_isbn","date") VALUES ('BORROW','123456789','9780194713535','2021-07-26');
+INSERT INTO "transaction" ("transaction_type","student_id","book_isbn","date") VALUES ('BORROW','123456789','9781447936879','2021-08-26');
+INSERT INTO "transaction" ("transaction_type","student_id","book_isbn","date") VALUES ('RETURN','123456789','9780194713535','2021-08-27');
+INSERT INTO "transaction" ("transaction_type","student_id","book_isbn","date") VALUES ('BORROW','222333444','9781447936879','2021-07-26');
+INSERT INTO "transaction" ("transaction_type","student_id","book_isbn","date") VALUES ('BORROW','222333444','9780194713535','2021-07-26');
+INSERT INTO "transaction" ("transaction_type","student_id","book_isbn","date") VALUES ('RETURN','123456789','9781447936879','2021-07-26');
+INSERT INTO "transaction" ("transaction_type","student_id","book_isbn","date") VALUES ('RETURN','222333444','9780194713535','2021-07-26');
+
+
 
 ----
--- Drop index for username
+-- Drop index for id
 ----
-DROP INDEX IF EXISTS "username";
+DROP INDEX IF EXISTS "id";
 
 ----
--- structure for index username on table users
+-- structure for index id on table student
 ----
-CREATE UNIQUE INDEX 'username' ON "users" ("username");
+CREATE UNIQUE INDEX 'id' ON "student" ("id");
 COMMIT;
