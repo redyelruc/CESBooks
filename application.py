@@ -170,7 +170,7 @@ def borrow():
             db.execute("INSERT INTO transaction(student_id, book_isbn, date_borrowed) VALUES (:student, :isbn, :date_borrowed)",
                         student=session["user_id"], isbn=isbn, date_borrowed=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-        flash("Book is due for return on " + datetime.now().strftime('%Y-%m-%d') + datetime.timedelta(days=14))
+        flash("Book has been borrowed.")
         return redirect("/")
 
 
