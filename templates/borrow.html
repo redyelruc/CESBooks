@@ -17,7 +17,7 @@
         </tr>
       </thead>
       <tbody>
-    {% for row in stocks %}
+    {% for row in books %}
       <tr>
         <td>{{ row[0] }}</td>
         <td>{{ row[1] }}</td>
@@ -36,7 +36,7 @@
         <div class="form-group">
             <input autocomplete="off" autofocus class="form-control" name="isbn" placeholder="ISBN" type="text" onkeyup="EnableDisable(isbn, student)">
         </div>
-        <button class="btn btn-primary" id="submit" type="submit" disabled = true>Borrow Book</button>
+        <button class="btn btn-primary" id="submit" type="submit">Borrow Book</button>
     </form>
 
 <script type="text/javascript">

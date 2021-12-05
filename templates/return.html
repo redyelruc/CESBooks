@@ -5,23 +5,14 @@
 {% endblock %}
 
 {% block main %}
-    <form action="/buy" method="post">
+    <form action="/return" method="post">
         <div class="form-group">
-            <input autocomplete="off" autofocus class="form-control" name="isbn" placeholder="ISBN" type="text" onkeyup="EnableDisable(isbn, student)">
+            <input autocomplete="off" autofocus class="form-control" name="isbn" placeholder="ISBN" type="text">
         </div>
-        <button class="btn btn-primary" id = "submit" disabled = "true" type="submit">Buy Book</button>
+        <button class="btn btn-primary" id = "submit" type="submit">Return Book</button>
     </form>
 
 
 <script type="text/javascript">
-    function EnableDisable(isbn, student) {
-        var btnSubmit = document.getElementById("submit");
-        //Verify the ISBN has 13 characters
-        if (isbn.value.trim().length == 13) {
-            btnSubmit.disabled = false;
-        } else {
-            btnSubmit.disabled = true;
-        }
-    };
 </script>
 {% endblock %}
