@@ -158,7 +158,6 @@ def borrow():
         return render_template("borrow.html", books=books)
     else:
         isbn = request.form.get("isbn")
-        student_id = request.form.get("student_id")
         # check database to make sure book is available
         copies_available = db.execute("SELECT copies from book WHERE isbn = :isbn", isbn = isbn)
 
@@ -166,11 +165,11 @@ def borrow():
             return apology('Sorry, no copies available')
         else:
             db.execute("UPDATE book SET copies = :books_left WHERE isbn = :isbn", isbn = isbn,
-                    books_left = int(copies_available[0]) - 1)
+                    books_left = int(copies_available[0]['copies']) - 1)
             db.execute("INSERT INTO transaction(transaction_type, student_id, book_isbn, date) VALUES (:trans, :student, :isbn, :date)",
                         trans=transaction, student=session["user_id"], isbn=isbn, date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-        flash("Book has been loaned!")
+        flash("Book has been borrowed!")
         return redirect("/")
 
 
@@ -179,7 +178,7 @@ def borrow():
 def return_book():
     """Return a book"""
     if request.method == "GET":
-        return render_template("buy.html")
+        return render_template("return.html")
     else:
         isbn = request.form.get("isbn")
         transaction = "RETURN"
@@ -187,7 +186,7 @@ def return_book():
         copies_available = db.execute("SELECT * from book WHERE isbn = :isbn", isbn = isbn)
         try:
             # add one to stock level and write to database
-            db.execute("UPDATE books SET copies = :copies WHERE isbn = :isbn", isbn = isbn, copiess = copies_available[0] + 1)
+            db.execute("UPDATE book SET copies = :copies WHERE isbn = :isbn", isbn = isbn, copies = copies_available[0]['copies'] + 1)
             # record in transactions database
             db.execute("INSERT INTO transaction(transaction_type, student_id, book_isbn, date) VALUES (:trans, :student, :isbn, :date)",
                             trans=transaction, student=session["user_id"], isbn=isbn, date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))

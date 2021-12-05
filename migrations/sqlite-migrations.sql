@@ -9,7 +9,7 @@ BEGIN TRANSACTION;
 ----
 -- Drop table for users
 ----
-DROP TABLE IF EXISTS "users";
+DROP TABLE IF EXISTS "student";
 
 ----
 -- Table structure for users
