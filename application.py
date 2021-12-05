@@ -111,7 +111,10 @@ def register():
         # check student_id is not blank
         if not request.form.get("student_id"):
             return apology("must provide student_id", 403)
-        # check password id not blank
+        # check name not blank
+        if not request.form.get("name"):
+            return apology('must provide name', 403)
+        # check password is not blank
         if not request.form.get("password"):
             return apology('must provide password', 403)
         # check student_id is unique
@@ -121,8 +124,8 @@ def register():
         if request.form.get("password") != request.form.get("confirm-password"):
             return apology("password and confirmation do not match", 403)
         # hash the password and create row in db
-        db.execute("INSERT INTO student(id, hash) VALUES (:student_id, :hash)", student_id=request.form.get("student_id"),
-                   hash=generate_password_hash(request.form.get("password")))
+        db.execute("INSERT INTO student(id, name, hash) VALUES (:student_id, :name, :hash)", student_id=request.form.get("student_id"),
+                   name=request.form.get("name"),hash=generate_password_hash(request.form.get("password")))
 
         # make sure that the new user is logged in
         rows = db.execute("SELECT * FROM student WHERE id = :student_id", student_id=request.form.get("student_id"))
