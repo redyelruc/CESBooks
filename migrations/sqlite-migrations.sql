@@ -19,8 +19,8 @@ CREATE TABLE 'student' ('id' varchar(20) PRIMARY KEY NOT NULL, 'name' varchar(30
 ----
 -- Data dump for users, a total of 2 rows
 ----
-INSERT INTO "student" ("id","name","hash") VALUES ('123456789','Aidan','pbkdf2:sha256:150000$ts8TeHZ0$c0e79f0fa4a812fc081f7a0a9c5c88b7e9099d6d3b069be237321e9460f7c649');
-INSERT INTO "student" ("id","name","hash") VALUES ('222333444','Rob','pbkdf2:sha256:150000$VSoXKJv9$a34e5c53fbdbe525b21c3a85e1bdd48c488b2afbb9feda27634df780eb6d1cb6');
+INSERT INTO "student" ("id","name","hash") VALUES ('123456789','Curley, Aidan','pbkdf2:sha256:150000$ts8TeHZ0$c0e79f0fa4a812fc081f7a0a9c5c88b7e9099d6d3b069be237321e9460f7c649');
+INSERT INTO "student" ("id","name","hash") VALUES ('222333444','Tuck, Rob','pbkdf2:sha256:150000$VSoXKJv9$a34e5c53fbdbe525b21c3a85e1bdd48c488b2afbb9feda27634df780eb6d1cb6');
 
 ----
 -- Drop table for book
