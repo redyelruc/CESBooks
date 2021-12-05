@@ -53,10 +53,10 @@ def index():
 @login_required
 def transactions():
     """Show history of transactions"""
-    rows = db.execute("SELECT * FROM transaction WHERE DATE(date) = CURDATE() ORDER BY date DESC")
+    rows = db.execute("SELECT * FROM transaction WHERE student_id = :student_id ORDER BY date_borrowed DESC", student_id = session["user_id"])
     transaction_history =[]
     for row in rows:
-        transaction_history.append([row['date'], row['transaction_type'], row['book_isbn'], row['student_id']])
+        transaction_history.append([row['date_borrowed'], row['date_returned'], row['book_isbn'], row['student_id']])
 
     # redirect user to index page
     return render_template("transactions.html", transactions=transaction_history)
@@ -93,7 +93,7 @@ def login():
         session["user_id"] = rows[0]["id"]
 
         # Redirect user to home page
-        return redirect("/")
+        return redirect("/transactions")
 
     # User reached route via GET (as by clicking a link or via redirect)
     else:
@@ -151,9 +151,10 @@ def borrow():
     """Borrow a book"""
     rows = db.execute("SELECT * FROM book ORDER BY title")
     books =[]
-    transaction = "BORROW"
+
     for row in rows:
         books.append([row['isbn'], row['title'], row['author'], row['edition'], row['copies']])
+
     if request.method == "GET":
         return render_template("borrow.html", books=books)
     else:
@@ -166,10 +167,10 @@ def borrow():
         else:
             db.execute("UPDATE book SET copies = :books_left WHERE isbn = :isbn", isbn = isbn,
                     books_left = int(copies_available[0]['copies']) - 1)
-            db.execute("INSERT INTO transaction(transaction_type, student_id, book_isbn, date) VALUES (:trans, :student, :isbn, :date)",
-                        trans=transaction, student=session["user_id"], isbn=isbn, date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            db.execute("INSERT INTO transaction(student_id, book_isbn, date_borrowed) VALUES (:student, :isbn, :date_borrowed)",
+                        student=session["user_id"], isbn=isbn, date_borrowed=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-        flash("Book has been borrowed!")
+        flash("Book is due for return on " + datetime.now().strftime('%Y-%m-%d') + datetime.timedelta(days=14))
         return redirect("/")
 
 
@@ -188,9 +189,8 @@ def return_book():
             # add one to stock level and write to database
             db.execute("UPDATE book SET copies = :copies WHERE isbn = :isbn", isbn = isbn, copies = copies_available[0]['copies'] + 1)
             # record in transactions database
-            db.execute("INSERT INTO transaction(transaction_type, student_id, book_isbn, date) VALUES (:trans, :student, :isbn, :date)",
-                            trans=transaction, student=session["user_id"], isbn=isbn, date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-            flash("Book has been returned!")
+            db.execute("UPDATE transaction SET date_returned = :today WHERE book_isbn = :isbn AND student_id = :id", isbn = isbn, id = session["user_id"], today=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            flash("Thank you for your return!")
             return redirect("/")
         except IndexError:
             apology("Not in database.")
