@@ -37,19 +37,7 @@ Session(app)
 #'mysql://<your_student_id>:<your_mysql_password>@<your_mysql_hostname>/<your_database_name>'
 db = SQL(os.environ['DATABASE'])
 
-@app.route("/")
-@login_required
-def index():
-    """Show all books"""
-
-    rows = db.execute("SELECT * FROM book ORDER BY title")
-    books =[]
-    for row in rows:
-        books.append([row['isbn'], row['title'], row['author'], row['edition'], row['copies']])
-    return render_template("index.html", books=books)
-
-
-@app.route("/transactions")
+@app.route("/history")
 @login_required
 def transactions():
     """Show history of transactions"""
@@ -93,7 +81,7 @@ def login():
         session["user_id"] = rows[0]["id"]
 
         # Redirect user to home page
-        return redirect("/transactions")
+        return redirect("/")
 
     # User reached route via GET (as by clicking a link or via redirect)
     else:
@@ -145,10 +133,10 @@ def logout():
     return redirect("/")
 
 
-@app.route("/borrow", methods=["GET", "POST"])
+@app.route("/", methods=["GET", "POST"])
 @login_required
 def borrow():
-    """Borrow a book"""
+    """Borrow/Return a book"""
     rows = db.execute("SELECT * FROM book ORDER BY title")
     books =[]
 
@@ -158,43 +146,36 @@ def borrow():
     if request.method == "GET":
         return render_template("borrow.html", books=books)
     else:
+
         isbn = request.form.get("isbn")
-        # check database to make sure book is available
-        copies_available = db.execute("SELECT copies from book WHERE isbn = :isbn", isbn = isbn)
+        today = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        button_pressed = request.form.get('submit')
+        copies_available = int(db.execute("SELECT copies from book WHERE isbn = :isbn", isbn = isbn)[0]['copies'])
 
-        if not copies_available:
-            return apology('Sorry, no copies available')
-        else:
-            db.execute("UPDATE book SET copies = :books_left WHERE isbn = :isbn", isbn = isbn,
-                    books_left = int(copies_available[0]['copies']) - 1)
-            db.execute("INSERT INTO transaction(student_id, book_isbn, date_borrowed) VALUES (:student, :isbn, :date_borrowed)",
-                        student=session["user_id"], isbn=isbn, date_borrowed=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        if button_pressed == 'borrow':
+            if not copies_available:
+                return apology('Sorry, no copies available')
+            else:
+                db.execute("UPDATE book SET copies = :books_left WHERE isbn = :isbn", isbn = isbn,
+                        books_left = copies_available - 1)
+                db.execute("INSERT INTO transaction(student_id, book_isbn, date_borrowed) VALUES (:student, :isbn, :date_borrowed)",
+                        student=session["user_id"], isbn=isbn, date_borrowed=today)
 
-        flash("Book has been borrowed.")
-        return redirect("/")
+            flash("Book has been borrowed.")
+            return redirect("/history")
 
-
-@app.route("/return", methods=["GET", "POST"])
-@login_required
-def return_book():
-    """Return a book"""
-    if request.method == "GET":
-        return render_template("return.html")
-    else:
-        isbn = request.form.get("isbn")
-        transaction = "RETURN"
-        # get current stock level
-        copies_available = db.execute("SELECT * from book WHERE isbn = :isbn", isbn = isbn)
-        try:
-            # add one to stock level and write to database
-            db.execute("UPDATE book SET copies = :copies WHERE isbn = :isbn", isbn = isbn, copies = copies_available[0]['copies'] + 1)
-            # record in transactions database
-            db.execute("UPDATE transaction SET date_returned = :today WHERE book_isbn = :isbn AND student_id = :id", isbn = isbn, id = session["user_id"], today=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-            flash("Thank you for your return!")
-            return redirect("/")
-        except IndexError:
-            apology("Not in database.")
-            return
+        elif button_pressed == 'return':
+            # RETURN A BOOK
+            try:
+                # add one to stock level and write to database
+                db.execute("UPDATE book SET copies = :copies WHERE isbn = :isbn", isbn = isbn, copies = copies_available + 1)
+                # record in transactions database
+                db.execute("UPDATE transaction SET date_returned = :date WHERE book_isbn = :isbn AND student_id = :id", isbn = isbn, id = session["user_id"], date=today)
+                flash("Thank you for your return!")
+                return redirect("/history")
+            except IndexError:
+                apology("This book is not listed in your borrowed books.")
+    return redirect("/history")
 
 
 @app.route("/add", methods=["GET", "POST"])
