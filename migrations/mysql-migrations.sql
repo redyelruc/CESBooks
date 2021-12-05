@@ -57,22 +57,22 @@ DROP TABLE IF EXISTS transaction;
 # ----
 CREATE TABLE transaction
 (
-    transaction_type text NOT NULL,
     student_id       varchar(20),
     book_isbn        char(13),
-    date             TIMESTAMP DEFAULT (CURRENT_TIMESTAMP)
+    date_borrowed    TIMESTAMP DEFAULT (CURRENT_TIMESTAMP),
+    date_returned    TIMESTAMP
 );
 
 # ----
 # -- Data dump for transaction, a total of 7 rows
 # ----
-INSERT INTO transaction (transaction_type,student_id,book_isbn,date) VALUES ("BORROW","123456789","9780194713535","2021-07-26");
-INSERT INTO transaction (transaction_type,student_id,book_isbn,date) VALUES ("BORROW","123456789","9781447936879","2021-08-26");
-INSERT INTO transaction (transaction_type,student_id,book_isbn,date) VALUES ("RETURN","123456789","9780194713535","2021-08-27");
-INSERT INTO transaction (transaction_type,student_id,book_isbn,date) VALUES ("BORROW","222333444","9781447936879","2021-07-26");
-INSERT INTO transaction (transaction_type,student_id,book_isbn,date) VALUES ("BORROW","222333444","9780194713535","2021-07-26");
-INSERT INTO transaction (transaction_type,student_id,book_isbn,date) VALUES ("RETURN","123456789","9781447936879","2021-07-26");
-INSERT INTO transaction (transaction_type,student_id,book_isbn,date) VALUES ("RETURN","222333444","9780194713535","2021-07-26");
+INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("123456789","9780194713535","2021-11-26","2021-11-29");
+INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("123456789","9781447936879","2021-11-26","2021-11-30");
+INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("123123123","9780194713535","2021-11-27","2021-12-05");
+INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("222333444","9781447936879","2021-11-26","2021-12-05");
+INSERT INTO transaction (student_id,book_isbn,date_borrowed) VALUES ("222333444","9780194713535","2021-12-06");
+INSERT INTO transaction (student_id,book_isbn,date_borrowed) VALUES ("123456789","9781447936879","2021-12-01");
+INSERT INTO transaction (student_id,book_isbn,date_borrowed) VALUES ("123123123","9780194713535","2021-12-04");
 # ----
 # -- structure for index name on table student
 # ----
