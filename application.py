@@ -141,7 +141,7 @@ def borrow():
     books =[]
 
     for row in rows:
-        books.append([row['isbn'], row['title'], row['author'], row['edition'], row['copies']])
+        books.append([row['isbn'], row['title'], row['author'], row['year'], row['copies']])
 
     if request.method == "GET":
         return render_template("borrow.html", books=books)
@@ -188,6 +188,7 @@ def add():
     else:
         isbn = request.form.get("isbn")
         book_details = isbnlib.meta(isbn)
+        print(book_details)
         cover = isbnlib.cover(isbn)
         book_details['cover']=cover['thumbnail']
         if "ISBN-13" in book_details:
@@ -200,18 +201,16 @@ def addstock():
     """Get stock quote."""
     if request.method == "GET":
         # Display form for user to enter stock to search
-        return render_template("add.html", book)
+        return render_template("add.html")
     else:
         isbn = request.form.get("isbn")
         title = request.form.get("title")
-        level = request.form.get("level")
-        edition = request.form.get("edition")
-        price_new = float(request.form.get("price_new"))
-        price_used = float(request.form.get("price_used"))
-        stock_new = request.form.get("stock_new")
-        stock_used = request.form.get("stock_used")
-        db.execute("INSERT INTO books(isbn, title, level, edition, stock_new, stock_used, price_new, price_used) VALUES(:isbn, :title, :level, :edition, :stock_new, :stock_used, :price_new, :price_used)",
-                    isbn = isbn, title=title, level=level, edition=edition, stock_new=stock_new, stock_used=stock_used, price_new=price_new, price_used = price_used)
+        author = request.form.get("author")
+        year = request.form.get("year")
+        copies = request.form.get("copies")
+
+        db.execute("INSERT INTO book(isbn, title, author, year, copies) VALUES(:isbn, :title, :author, :year, :copies)",
+                    isbn = isbn, title=title, author=author, year=year, copies=copies)
         flash("Title added")
         return redirect("/")
 
