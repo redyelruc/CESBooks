@@ -133,10 +133,10 @@ def logout():
     return redirect("/")
 
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/", methods=["GET"])
 @login_required
-def borrow():
-    """Borrow/Return a book"""
+def books():
+    """List all books"""
     rows = db.execute("SELECT * FROM book ORDER BY title")
     books =[]
 
@@ -144,37 +144,51 @@ def borrow():
         books.append([row['isbn'], row['title'], row['author'], row['year'], row['copies']])
 
     if request.method == "GET":
+        return render_template("books.html", books=books)
+
+
+@app.route("/borrow", methods=["GET", "POST"])
+@login_required
+def borrow():
+    """Borrow a book"""
+    if request.method == "GET":
         return render_template("borrow.html", books=books)
     else:
-
         isbn = request.form.get("isbn")
         today = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        button_pressed = request.form.get('submit')
         copies_available = int(db.execute("SELECT copies from book WHERE isbn = :isbn", isbn = isbn)[0]['copies'])
 
-        if button_pressed == 'borrow':
-            if not copies_available:
-                return apology('Sorry, no copies available')
-            else:
-                db.execute("UPDATE book SET copies = :books_left WHERE isbn = :isbn", isbn = isbn,
-                        books_left = copies_available - 1)
-                db.execute("INSERT INTO transaction(student_id, book_isbn, date_borrowed) VALUES (:student, :isbn, :date_borrowed)",
-                        student=session["user_id"], isbn=isbn, date_borrowed=today)
+        if not copies_available:
+            return apology('Sorry, no copies available')
+        else:
+            db.execute("UPDATE book SET copies = :books_left WHERE isbn = :isbn", isbn = isbn,
+                    books_left = copies_available - 1)
+            db.execute("INSERT INTO transaction(student_id, book_isbn, date_borrowed) VALUES (:student, :isbn, :date_borrowed)",
+                    student=session["user_id"], isbn=isbn, date_borrowed=today)
 
-            flash("Book has been borrowed.")
+        flash("Book has been borrowed.")
+        return redirect("/history")
+
+
+@app.route("/return_books", methods=["GET", "POST"])
+@login_required
+def return_books():
+    """Return a book"""
+    if request.method == "GET":
+        return render_template("return.html")
+    else:
+        isbn = request.form.get("isbn")
+        today = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        copies_available = int(db.execute("SELECT copies from book WHERE isbn = :isbn", isbn = isbn)[0]['copies'])
+        print(copies_available)
+        # RETURN A BOOK
+        try:
+            db.execute("UPDATE book SET copies = :copies WHERE isbn = :isbn", isbn = isbn, copies = copies_available + 1)
+            db.execute("UPDATE transaction SET date_returned = :date WHERE book_isbn = :isbn AND student_id = :id", isbn = isbn, id = session["user_id"], date=today)
+            flash("Thank you for your return!")
             return redirect("/history")
-
-        elif button_pressed == 'return':
-            # RETURN A BOOK
-            try:
-                # add one to stock level and write to database
-                db.execute("UPDATE book SET copies = :copies WHERE isbn = :isbn", isbn = isbn, copies = copies_available + 1)
-                # record in transactions database
-                db.execute("UPDATE transaction SET date_returned = :date WHERE book_isbn = :isbn AND student_id = :id", isbn = isbn, id = session["user_id"], date=today)
-                flash("Thank you for your return!")
-                return redirect("/history")
-            except IndexError:
-                apology("This book is not listed in your borrowed books.")
+        except IndexError:
+            apology("This book is not listed in your borrowed books.")
     return redirect("/history")
 
 
@@ -194,6 +208,7 @@ def add():
         if "ISBN-13" in book_details:
             book_details['ISBN'] = book_details.pop("ISBN-13")
         return render_template("addstock.html", **book_details)
+
 
 @app.route("/addstock", methods=["GET", "POST"])
 @login_required
