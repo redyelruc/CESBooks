@@ -35,18 +35,18 @@ CREATE TABLE book
     isbn       varchar(13) NOT NULL,
     title      varchar(100),
     author     varchar(100),
-    edition    varchar(10),
+    year    varchar(10),
     copies     integer
 );
 
 # ----
 # -- Data dump for book, a total of 5 rows
 # ----
-INSERT INTO book (isbn,title,author,edition,copies) VALUES ("9780194713535","New Headway C1","Soars, John","5th","2");
-INSERT INTO book (isbn,title,author,edition,copies) VALUES ("9780194771818","New Headway B2","Soars, John","5th","1");
-INSERT INTO book (isbn,title,author,edition,copies) VALUES ("9781447936879","Cutting Edge B1","Cunningham, Sarah","4th","1");
-INSERT INTO book (isbn,title,author,edition,copies) VALUES ("9783125404243","Empower B1","Doff, Adrian","1st","2");
-INSERT INTO book (isbn,title,author,edition,copies) VALUES ("9781447936909","Cutting Edge A2-B1","Cunningham, Sarah","5th","3");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9780194713535","New Headway C1","Soars, John","2019","2");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9780194771818","New Headway B2","Soars, John","2018","1");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781447936879","Cutting Edge B1","Cunningham, Sarah","2020","1");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9783125404243","Empower B1","Doff, Adrian","2018","2");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781447936909","Cutting Edge A2-B1","Cunningham, Sarah","2019","3");
 # ----
 # -- Drop table for transaction
 # ----
