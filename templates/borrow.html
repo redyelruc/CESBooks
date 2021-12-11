@@ -5,39 +5,11 @@
 {% endblock %}
 
 {% block main %}
-
-    <table class="table">
-      <thead class="thead-light">
-        <tr>
-          <th scope="col">ISBN</th>
-          <th scope="col">Title </th>
-          <th scope="col">Author</th>
-          <th scope="col">Year</th>
-          <th scope="col">Copies</th>
-        </tr>
-      </thead>
-      <tbody>
-    {% for row in books %}
-      <tr>
-        <td>{{ row[0] }}</td>
-        <td>{{ row[1] }}</td>
-        <td>{{ row[2] }}</td>
-        <td>{{ row[3] }}</td>
-        <td>{{ row[4] }}</td>
-      </tr>
-    {% endfor %}
-      </tbody>
-    </table>
-
-      </tbody>
-    </table>
-
-        <form action="/" method="post">
+        <form action="/borrow" method="post">
         <div class="form-group">
             <input autocomplete="off" autofocus class="form-control" name="isbn" placeholder="ISBN" type="text" onkeyup="EnableDisable(isbn, student)">
         </div>
         <button class="btn btn-primary" name="submit" type="submit" value="borrow">Borrow</button>
-        <button class="btn btn-primary" name="submit" type="submit" value="return">Return</button>
     </form>
 
 <script type="text/javascript">
