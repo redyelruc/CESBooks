@@ -1,11 +1,12 @@
-# CES Bookstore
-CES Bookstore is a web application to manage book sales, written in Python using the Flask framework. 
-It is intended for internal use at Centre of English Studies, Leeds.
+# CESBooks
+CES Books is a web application to manage an imaginery university library.
+The application is written in Python using the Flask framework.
+
 
 ## Student Features
 1. Login - secure password verified login.
 2. Books - display all books in the library.
-3. Borrow - borrow a book using barcode sscanner.
+3. Borrow - borrow a book using barcode scanner.
 4. Return - return a book using thebarcode scanner.
 5. Account- list the borrowng history.
 6. Register - allow new user to register for access.
