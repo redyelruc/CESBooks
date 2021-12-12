@@ -7,7 +7,7 @@ from flask_session import Session
 from tempfile import mkdtemp
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
-from helpers import apology, login_required, is_late, days_between
+from helpers import apology, login_required, is_overdue, days_between
 import isbnlib
 
 
@@ -35,19 +35,6 @@ Session(app)
 
 # Configure CS50 Library to use SQL database
 db = SQL(os.environ['DATABASE'])
-
-
-@app.route("/history")
-@login_required
-def transactions():
-    """Show history of transactions"""
-    rows = db.execute("SELECT * FROM transaction WHERE student_id = :student_id ORDER BY date_returned ASC, date_borrowed DESC LIMIT 8", student_id = session["user_id"])
-    transaction_history =[]
-    for row in rows:
-        transaction_history.append([row['date_borrowed'], row['date_returned'], row['book_isbn'], row['student_id']])
-
-    # redirect user to index page
-    return render_template("transactions.html", transactions=transaction_history)
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -145,6 +132,18 @@ def books():
     if request.method == "GET":
         return render_template("books.html", books=books)
 
+
+@app.route("/history")
+@login_required
+def transactions():
+    """Show history of transactions"""
+    rows = db.execute("SELECT * FROM transaction WHERE student_id = :student_id ORDER BY date_returned ASC, date_borrowed DESC LIMIT 8", student_id = session["user_id"])
+    transaction_history =[]
+    for row in rows:
+        transaction_history.append([row['date_borrowed'], row['date_returned'], row['book_isbn'], is_overdue(row['date_borrowed'], row['date_returned'])])
+
+    # redirect user to index page
+    return render_template("transactions.html", transactions=transaction_history)
 
 @app.route("/borrow", methods=["GET", "POST"])
 @login_required

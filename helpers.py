@@ -1,6 +1,7 @@
 import os
 import requests
 import urllib.parse
+from datetime import date, datetime
 
 from flask import redirect, render_template, request, session
 from functools import wraps
@@ -32,3 +33,15 @@ def login_required(f):
             return redirect("/login")
         return f(*args, **kwargs)
     return decorated_function
+
+
+def days_between(d1, d2):
+    return abs((d2 - d1).days)
+
+def is_overdue(date_borrowed, date_returned):
+    if date_returned != None:
+        return ''
+    days_borrowed = days_between(date_borrowed, date.today())
+    if days_borrowed < 14:
+        return ''
+    return (f'{days_borrowed - 14} days')
