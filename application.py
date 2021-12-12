@@ -7,7 +7,7 @@ from flask_session import Session
 from tempfile import mkdtemp
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
-from helpers import apology, login_required
+from helpers import apology, login_required, is_late, days_between
 import isbnlib
 
 
@@ -36,18 +36,18 @@ Session(app)
 # Configure CS50 Library to use SQL database
 db = SQL(os.environ['DATABASE'])
 
+
 @app.route("/history")
 @login_required
 def transactions():
     """Show history of transactions"""
-    rows = db.execute("SELECT * FROM transaction WHERE student_id = :student_id ORDER BY date_borrowed DESC", student_id = session["user_id"])
+    rows = db.execute("SELECT * FROM transaction WHERE student_id = :student_id ORDER BY date_returned ASC, date_borrowed DESC LIMIT 8", student_id = session["user_id"])
     transaction_history =[]
     for row in rows:
         transaction_history.append([row['date_borrowed'], row['date_returned'], row['book_isbn'], row['student_id']])
 
     # redirect user to index page
     return render_template("transactions.html", transactions=transaction_history)
-
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -160,8 +160,7 @@ def borrow():
         if not copies_available:
             return apology('Sorry, no copies available')
         else:
-            db.execute("UPDATE book SET copies = :books_left WHERE isbn = :isbn", isbn = isbn,
-                    books_left = copies_available - 1)
+            db.execute("UPDATE book SET copies = copies -1 WHERE isbn = :isbn", isbn = isbn)
             db.execute("INSERT INTO transaction VALUES (:student, :isbn, :date_borrowed, :date_returned)",
                     student=session["user_id"], isbn=isbn, date_borrowed=today, date_returned='0000:00:00')
 
@@ -180,12 +179,12 @@ def return_books():
         today = date.today().strftime('%Y-%m-%d')
         # RETURN A BOOK
         try:
-            copies_available = int(db.execute("SELECT copies from book WHERE isbn = :isbn", isbn = isbn)[0]['copies'])
-            db.execute("UPDATE book SET copies = :copies WHERE isbn = :isbn", isbn = isbn, copies = copies_available + 1)
             db.execute("UPDATE transaction SET date_returned = :date WHERE book_isbn = :isbn AND student_id = :id AND date_returned = :empty", isbn = isbn, id = session["user_id"], date=today, empty = '0000:00:00')
+            db.execute("UPDATE book SET copies = copies + 1 WHERE isbn = :isbn", isbn = isbn)
+
             flash("Thank you for your return!")
             return redirect("/history")
-        except IndexError:
+        except:
             apology("This book is not listed in your borrowed books.")
     return redirect("/history")
 
