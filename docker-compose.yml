@@ -14,6 +14,10 @@ services:
       MYSQL_USER: ${DB_APPLICATION_USER}
       MYSQL_PASSWORD: ${DB_APPLICATION_PASSWORD}
     command: --innodb-flush-method=fsync --innodb-use-native-aio=0
+    healthcheck:
+      test: "/usr/bin/mysql --user=root --password=$$MYSQL_ROOT_PASSWORD --execute \"SHOW DATABASES;\""
+      timeout: 2s
+      retries: 10
 
   app:
     image: ces-books:4.0
@@ -24,5 +28,6 @@ services:
     expose:
       - "80"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
