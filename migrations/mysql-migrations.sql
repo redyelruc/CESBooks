@@ -40,13 +40,16 @@ CREATE TABLE book
 );
 
 # ----
-# -- Data dump for book, a total of 5 rows
+# -- Data dump for book, a total of 7 rows
 # ----
-INSERT INTO book (isbn,title,author,year,copies) VALUES ("9780194713535","New Headway C1","Soars, John","2019","2");
-INSERT INTO book (isbn,title,author,year,copies) VALUES ("9780194771818","New Headway B2","Soars, John","2018","1");
-INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781447936879","Cutting Edge B1","Cunningham, Sarah","2020","1");
-INSERT INTO book (isbn,title,author,year,copies) VALUES ("9783125404243","Empower B1","Doff, Adrian","2018","2");
-INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781447936909","Cutting Edge A2-B1","Cunningham, Sarah","2019","3");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781491952023","JavaScript: The Definitive Guide","David Flanagan","2020","2");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781937785499","Programming Ruby 1.9 & 2.0 - The Pragmatic Programmers\' Guide","David Thomas","2013","2");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9780135957059","The Pragmatic Programmer","David Thomas","2019","1");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9780596516178","The Ruby Programming Language","David Flanagan","2008","1");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9780132350884","Clean Code - A Handbook Of Agile Software Craftsmanship ","Robert C, Martin","2009","1");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781593279288","Python Crash Course, 2nd Edition - A Hands-On, Project-Based Introduction To Programming","Eric Mathes","2019","1");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781449369415","Introduction To Machine Learning With Python - A Guide For Data Scientists","Andreas C. Müller","2016","2");
+
 # ----
 # -- Drop table for transaction
 # ----
@@ -64,15 +67,13 @@ CREATE TABLE transaction
 );
 
 # ----
-# -- Data dump for transaction, a total of 7 rows
+# -- Data dump for transaction, a total of 5 rows
 # ----
-INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("123456789","9780194713535","2021-11-26","2021-11-29");
-INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("123456789","9781447936879","2021-11-26","2021-11-30");
-INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("123123123","9780194713535","2021-11-27","2021-12-05");
-INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("222333444","9781447936879","2021-11-26","2021-12-05");
-INSERT INTO transaction (student_id,book_isbn,date_borrowed) VALUES ("222333444","9780194713535","2021-12-06");
-INSERT INTO transaction (student_id,book_isbn,date_borrowed) VALUES ("123456789","9781447936879","2021-12-01");
-INSERT INTO transaction (student_id,book_isbn,date_borrowed) VALUES ("123123123","9780194713535","2021-12-04");
+INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("123456789","9780596516178","2021-11-21","2021-11-29");
+INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("123456789","9781937785499","2021-11-26","2021-11-30");
+INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("123456789","9780132350884","2021-11-27","2021-12-05");
+INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("222333444","9781491952023","2021-11-20","2021-12-05");
+INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("222333444","9780132350884","2021-12-01","2021-12-05");
 # ----
 # -- structure for index name on table student
 # ----

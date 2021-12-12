@@ -33,8 +33,7 @@ app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
-# Configure CS50 Library to use SQLite database
-#'mysql://<your_student_id>:<your_mysql_password>@<your_mysql_hostname>/<your_database_name>'
+# Configure CS50 Library to use SQL database
 db = SQL(os.environ['DATABASE'])
 
 @app.route("/history")
