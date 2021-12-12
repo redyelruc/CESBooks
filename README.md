@@ -1,5 +1,5 @@
 # CESBooks
-CES Books is a web application to manage an imaginery university library.
+A mini web application to manage an imaginary university library.
 The application is written in Python using the Flask framework.
 
 
