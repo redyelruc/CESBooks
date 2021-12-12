@@ -73,7 +73,8 @@ INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALU
 INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("123456789","9781937785499","2021-11-26","2021-11-30");
 INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("123456789","9780132350884","2021-11-27","2021-12-05");
 INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("222333444","9781491952023","2021-11-20","2021-12-05");
-INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("222333444","9780132350884","2021-12-01","0000-00-00");
+INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("222333444","9781937785499","2021-11-23","0000-00-00");
+INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("222333444","9780132350884","2021-11-01","0000-00-00");
 # ----
 # -- structure for index name on table student
 # ----
