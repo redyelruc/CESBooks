@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import date
 
 from cs50 import SQL
 from flask import Flask, flash, jsonify, redirect, render_template, request, session
@@ -154,7 +154,7 @@ def borrow():
         return render_template("borrow.html", books=books)
     else:
         isbn = request.form.get("isbn")
-        today = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        today = date.today().strftime('%Y-%m-%d')
         copies_available = int(db.execute("SELECT copies from book WHERE isbn = :isbn", isbn = isbn)[0]['copies'])
 
         if not copies_available:
@@ -162,8 +162,8 @@ def borrow():
         else:
             db.execute("UPDATE book SET copies = :books_left WHERE isbn = :isbn", isbn = isbn,
                     books_left = copies_available - 1)
-            db.execute("INSERT INTO transaction(student_id, book_isbn, date_borrowed) VALUES (:student, :isbn, :date_borrowed)",
-                    student=session["user_id"], isbn=isbn, date_borrowed=today)
+            db.execute("INSERT INTO transaction VALUES (:student, :isbn, :date_borrowed, :date_returned)",
+                    student=session["user_id"], isbn=isbn, date_borrowed=today, date_returned='0000:00:00')
 
         flash("Book has been borrowed.")
         return redirect("/history")
@@ -177,13 +177,12 @@ def return_books():
         return render_template("return.html")
     else:
         isbn = request.form.get("isbn")
-        today = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        copies_available = int(db.execute("SELECT copies from book WHERE isbn = :isbn", isbn = isbn)[0]['copies'])
-        print(copies_available)
+        today = date.today().strftime('%Y-%m-%d')
         # RETURN A BOOK
         try:
+            copies_available = int(db.execute("SELECT copies from book WHERE isbn = :isbn", isbn = isbn)[0]['copies'])
             db.execute("UPDATE book SET copies = :copies WHERE isbn = :isbn", isbn = isbn, copies = copies_available + 1)
-            db.execute("UPDATE transaction SET date_returned = :date WHERE book_isbn = :isbn AND student_id = :id", isbn = isbn, id = session["user_id"], date=today)
+            db.execute("UPDATE transaction SET date_returned = :date WHERE book_isbn = :isbn AND student_id = :id AND date_returned = :empty", isbn = isbn, id = session["user_id"], date=today, empty = '0000:00:00')
             flash("Thank you for your return!")
             return redirect("/history")
         except IndexError:
@@ -201,9 +200,9 @@ def add():
     else:
         isbn = request.form.get("isbn")
         book_details = isbnlib.meta(isbn)
-        print(book_details)
         cover = isbnlib.cover(isbn)
         book_details['cover']=cover['thumbnail']
+
         if "ISBN-13" in book_details:
             book_details['ISBN'] = book_details.pop("ISBN-13")
         return render_template("addstock.html", **book_details)
