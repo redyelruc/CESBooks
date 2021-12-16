@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="finance" uuid="cb479b27-4f26-44fa-b787-d70a45ea63a5">
-      <driver-ref>sqlite.xerial</driver-ref>
+    <data-source source="LOCAL" name="finance@localhost" uuid="bd52ceb5-91c9-41bf-b71b-0dc510a42f8c">
+      <driver-ref>mariadb</driver-ref>
       <synchronize>true</synchronize>
-      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:C:\Users\redye\OneDrive\Desktop\books\finance.db</jdbc-url>
+      <jdbc-driver>org.mariadb.jdbc.Driver</jdbc-driver>
+      <jdbc-url>jdbc:mariadb://localhost:3306/finance</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>
 </project>

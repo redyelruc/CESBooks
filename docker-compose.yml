@@ -18,13 +18,18 @@ services:
       test: "/usr/bin/mysql --user=root --password=$$MYSQL_ROOT_PASSWORD --execute \"SHOW DATABASES;\""
       timeout: 2s
       retries: 10
+    ports:
+      - "3306:3306"
+    expose:
+      - "3306" 
+
 
   app:
     image: ces-books:4.0
     environment:
       DATABASE: mysql://${DB_APPLICATION_USER}:${DB_APPLICATION_PASSWORD}@db:3306/${DB_NAME}
     ports:
-      - 80:80  
+      - "80:80"
     expose:
       - "80"
     depends_on:

@@ -19,9 +19,9 @@ CREATE TABLE student
 # -- Data dump for student, a total of 2 rows
 # ----
 INSERT INTO student (id, name, hash)
-VALUES ("123456789", "Aidan", "pbkdf2:sha256:150000$ts8TeHZ0$c0e79f0fa4a812fc081f7a0a9c5c88b7e9099d6d3b069be237321e9460f7c649");
+VALUES ("c7465688", "Aidan", "pbkdf2:sha256:150000$VSoXKJv9$a34e5c53fbdbe525b21c3a85e1bdd48c488b2afbb9feda27634df780eb6d1cb6");
 INSERT INTO student (id, name, hash)
-VALUES ("222333444", "Rob", "pbkdf2:sha256:150000$VSoXKJv9$a34e5c53fbdbe525b21c3a85e1bdd48c488b2afbb9feda27634df780eb6d1cb6");
+VALUES ("c3608824", "Rob", "pbkdf2:sha256:150000$VSoXKJv9$a34e5c53fbdbe525b21c3a85e1bdd48c488b2afbb9feda27634df780eb6d1cb6");
 # ----
 # -- Drop table for book
 # ----
@@ -69,12 +69,12 @@ CREATE TABLE transaction
 # ----
 # -- Data dump for transaction, a total of 5 rows
 # ----
-INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("123456789","9780596516178","2021-11-21","2021-11-29");
-INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("123456789","9781937785499","2021-11-26","2021-11-30");
-INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("123456789","9780132350884","2021-11-27","2021-12-05");
-INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("222333444","9781491952023","2021-11-20","2021-12-05");
-INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("222333444","9781937785499","2021-11-23","0000-00-00");
-INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("222333444","9780132350884","2021-11-01","0000-00-00");
+INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("c7465688","9780596516178","2021-11-21","2021-11-29");
+INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("c7465688","9781937785499","2021-11-26","2021-11-30");
+INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("c7465688","9780132350884","2021-11-27","2021-12-05");
+INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("c3608824","9781491952023","2021-11-20","2021-12-05");
+INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("c3608824","9781937785499","2021-11-23","0000-00-00");
+INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("c3608824","9780132350884","2021-11-01","0000-00-00");
 # ----
 # -- structure for index name on table student
 # ----

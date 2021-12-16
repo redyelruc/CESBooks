@@ -8,38 +8,33 @@
     <form action="/addstock" method="post">
         <p>
             <div class="form-group">
-                <img src="{{ cover}}" width="100" height="120">
+                <img src="{{ cover}}" width="100" height="120" alt="book cover">
             </div>
-        </p>
         <p>
             <div class="form-group">
-                <label cfor="isbn">ISBN</label>
+                <label for="isbn">ISBN</label>
                 <input autocomplete="on" autofocus class="form-control" id ="isbn" name="isbn" value="{{ ISBN }}" type="text" >
             </div>
-        </p>
         <p>
             <div class="form-group">
                 <label for="title">Title</label>
                 <input autocomplete="off" autofocus class="form-control" id="title" name="title" placeholder="{{ Title }}" value="{{ Title }}" type="text">
             </div>
-        </p>
-            <p><div class="form-group">
+        <p>
+        <div class="form-group">
                 <label for="author">Author</label>
                 <input autocomplete="off" autofocus class="form-control" id="author" name="author" value="{{ Authors[0] }}" type="text">
             </div>
-        </p>
         <p>
             <div class="form-group">
                 <label for="year">Year</label>
-                <input autocomplete="off" autofocus class="form-control" name="year" value="{{ Year }}" type="number">
+                <input autocomplete="off" autofocus class="form-control" id="year" name="year" value="{{ Year }}" type="number">
             </div>
-        </p>
         <p>
             <div class="form-group">
                 <label for="copies">Copies</label>
-                <input autocomplete="off" autofocus class="form-control" name="copies" value="1" type="text">
+                <input autocomplete="off" autofocus class="form-control" id="copies" name="copies" value="1" type="text">
             </div>
-        </p>
         <button class="btn btn-primary" type="submit">Add Book</button>
     </form>
 {% endblock %}

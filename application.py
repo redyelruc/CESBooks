@@ -1,21 +1,24 @@
-import os
 from datetime import date
 
 from cs50 import SQL
-from flask import Flask, flash, jsonify, redirect, render_template, request, session
+from flask import Flask, flash, redirect, render_template, request, session
 from flask_session import Session
 from tempfile import mkdtemp
+
+from fine import Fine
+
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
-from helpers import apology, login_required, is_overdue, days_between
+from helpers import apology, login_required, is_overdue
 import isbnlib
-
+import requests
 
 # Configure application
 app = Flask(__name__)
 
 # Ensure templates are auto-reloaded
 app.config["TEMPLATES_AUTO_RELOAD"] = True
+
 
 # Ensure responses aren't cached
 @app.after_request
@@ -34,7 +37,7 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # Configure CS50 Library to use SQL database
-db = SQL(os.environ['DATABASE'])
+db = SQL("mysql://redyelruc:financered180974finance@127.0.0.1:3306/finance")
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -98,8 +101,9 @@ def register():
         if request.form.get("password") != request.form.get("confirm-password"):
             return apology("password and confirmation do not match", 403)
         # hash the password and create row in db
-        db.execute("INSERT INTO student(id, name, hash) VALUES (:student_id, :name, :hash)", student_id=request.form.get("student_id"),
-                   name=request.form.get("name"),hash=generate_password_hash(request.form.get("password")))
+        db.execute("INSERT INTO student(id, name, hash) VALUES (:student_id, :name, :hash)",
+                   student_id=request.form.get("student_id"),
+                   name=request.form.get("name"), hash=generate_password_hash(request.form.get("password")))
 
         # make sure that the new user is logged in
         rows = db.execute("SELECT * FROM student WHERE id = :student_id", student_id=request.form.get("student_id"))
@@ -124,26 +128,31 @@ def logout():
 def books():
     """List all books"""
     rows = db.execute("SELECT * FROM book ORDER BY title")
-    books =[]
+    booklist = []
 
     for row in rows:
-        books.append([row['isbn'], row['title'], row['author'], row['year'], row['copies']])
+        booklist.append([row['isbn'], row['title'], row['author'], row['year'], row['copies']])
 
     if request.method == "GET":
-        return render_template("books.html", books=books)
+        return render_template("books.html", books=booklist)
 
 
 @app.route("/history")
 @login_required
 def transactions():
     """Show history of transactions"""
-    rows = db.execute("SELECT * FROM transaction WHERE student_id = :student_id ORDER BY date_returned ASC, date_borrowed DESC LIMIT 8", student_id = session["user_id"])
-    transaction_history =[]
+    rows = db.execute(
+        "SELECT * FROM transaction WHERE student_id = :student_id ORDER BY date_returned ASC, date_borrowed DESC "
+        "LIMIT 8",
+        student_id=session["user_id"])
+    transaction_history = []
     for row in rows:
-        transaction_history.append([row['date_borrowed'], row['date_returned'], row['book_isbn'], is_overdue(row['date_borrowed'], row['date_returned'])])
+        transaction_history.append([row['date_borrowed'], row['date_returned'], row['book_isbn'],
+                                    is_overdue(row['date_borrowed'], row['date_returned'])])
 
     # redirect user to index page
     return render_template("transactions.html", transactions=transaction_history)
+
 
 @app.route("/borrow", methods=["GET", "POST"])
 @login_required
@@ -154,14 +163,14 @@ def borrow():
     else:
         isbn = request.form.get("isbn")
         today = date.today().strftime('%Y-%m-%d')
-        copies_available = int(db.execute("SELECT copies from book WHERE isbn = :isbn", isbn = isbn)[0]['copies'])
+        copies_available = int(db.execute("SELECT copies from book WHERE isbn = :isbn", isbn=isbn)[0]['copies'])
 
         if not copies_available:
             return apology('Sorry, no copies available')
         else:
-            db.execute("UPDATE book SET copies = copies -1 WHERE isbn = :isbn", isbn = isbn)
+            db.execute("UPDATE book SET copies = copies -1 WHERE isbn = :isbn", isbn=isbn)
             db.execute("INSERT INTO transaction VALUES (:student, :isbn, :date_borrowed, :date_returned)",
-                    student=session["user_id"], isbn=isbn, date_borrowed=today, date_returned='0000:00:00')
+                       student=session["user_id"], isbn=isbn, date_borrowed=today, date_returned='0000:00:00')
 
         flash("Book has been borrowed.")
         return redirect("/history")
@@ -178,13 +187,26 @@ def return_books():
         today = date.today().strftime('%Y-%m-%d')
         # RETURN A BOOK
         try:
-            db.execute("UPDATE transaction SET date_returned = :date WHERE book_isbn = :isbn AND student_id = :id AND date_returned = :empty", isbn = isbn, id = session["user_id"], date=today, empty = '0000:00:00')
-            db.execute("UPDATE book SET copies = copies + 1 WHERE isbn = :isbn", isbn = isbn)
-
+            db.execute(
+                "UPDATE transaction SET date_returned = :date WHERE book_isbn = :isbn AND student_id = :id AND "
+                "date_returned = :empty",
+                isbn=isbn, id=session["user_id"], date=today, empty='0000:00:00')
+            db.execute("UPDATE book SET copies = copies + 1 WHERE isbn = :isbn", isbn=isbn)
+            record = db.execute(
+                "SELECT date_borrowed FROM transaction WHERE book_isbn = :isbn AND student_id = :id AND date_returned "
+                "= :today",
+                isbn=isbn, id=session["user_id"], today=date.today())
+            due = record[0]["date_borrowed"]
+            fine = Fine(5, due, session["user_id"])
+            print(f'fine: {repr(fine)}')
+            url = "https://localhost:8081/post"
+            r = requests.post(url, data=fine.details)
+            print(r.status_code)
+            print(r.text)
             flash("Thank you for your return!")
-            return redirect("/history")
-        except:
-            apology("This book is not listed in your borrowed books.")
+        except Exception as e:
+            print(e)
+
     return redirect("/history")
 
 
@@ -199,7 +221,7 @@ def add():
         isbn = request.form.get("isbn")
         book_details = isbnlib.meta(isbn)
         cover = isbnlib.cover(isbn)
-        book_details['cover']=cover['thumbnail']
+        book_details['cover'] = cover['thumbnail']
 
         if "ISBN-13" in book_details:
             book_details['ISBN'] = book_details.pop("ISBN-13")
@@ -221,7 +243,7 @@ def addstock():
         copies = request.form.get("copies")
 
         db.execute("INSERT INTO book(isbn, title, author, year, copies) VALUES(:isbn, :title, :author, :year, :copies)",
-                    isbn = isbn, title=title, author=author, year=year, copies=copies)
+                   isbn=isbn, title=title, author=author, year=year, copies=copies)
         flash("Title added")
         return redirect("/")
 

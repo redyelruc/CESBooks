@@ -7,22 +7,20 @@
 {% block main %}
         <form action="/borrow" method="post">
         <div class="form-group">
-            <input autocomplete="off" autofocus class="form-control" name="isbn" placeholder="ISBN" type="text" onkeyup="EnableDisable(isbn, student)">
+            <label>
+                <input autocomplete="off" autofocus class="form-control" name="isbn" placeholder="ISBN" type="text" onkeyup="EnableDisable(isbn)">
+            </label>
         </div>
         <button class="btn btn-primary" name="submit" type="submit" value="borrow">Borrow</button>
     </form>
 
 <script type="text/javascript">
-    function EnableDisable(isbn, student) {
+    function EnableDisable(isbn) {
         //Reference the Button.
-        var btnSubmit = document.getElementById("submit");
+        const btnSubmit = document.getElementById("submit");
         //Verify the ISBN has 13 characters
-        if (isbn.value.trim().length == 13) {
-            btnSubmit.disabled = false;
-        } else {
-            btnSubmit.disabled = true;
-        }
-    };
+        btnSubmit.disabled = isbn.value.trim().length !== 13
+    }
 </script>
 
 {% endblock %}

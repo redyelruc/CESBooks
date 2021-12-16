@@ -1,9 +1,11 @@
-Flask
+Flask~=2.0.2
 wheel
-cs50
-isbnlib
+cs50~=8.0.0
+isbnlib~=3.10.9
 flask-session
-requests
+requests~=2.26.0
 mysql-connector-python
 mysqlclient
-waitress
+waitress~=2.0.0
+
+Werkzeug~=2.0.2

@@ -7,23 +7,19 @@
 {% block main %}
     <form action="/add" method="post">
         <div class="form-group">
-            <input autocomplete="on" autofocus class="form-control" id = "isbn" name="isbn" placeholder="isbn" type="text" onkeyup= "EnableDisable(isbn)">
+            <label for="isbn"></label><input autocomplete="on" autofocus class="form-control" id="isbn" name="isbn" placeholder="isbn" type="text" onkeyup= "EnableDisable(isbn)">
         </div>
-        <button class="btn btn-primary" disabled="true" id = "submit" type="submit">Add Book</button>
+        <button class="btn btn-primary" id="submit" type="submit">Add Book</button>
     </form>
 
 
 <script type="text/javascript">
     function EnableDisable(isbn) {
         //Reference the Button.
-        var btnSubmit = document.getElementById("submit");
+        const btnSubmit = document.getElementById("submit");
         //Verify the ISBN has 13 characters and the student name field is filled
-        if (isbn.value.trim().length == 13) {
-            btnSubmit.disabled = false;
-        } else {
-            btnSubmit.disabled = true;
-        }
-    };
+        btnSubmit.disabled = isbn.value.trim().length !== 13;
+    }
 </script>
 
 
