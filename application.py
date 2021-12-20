@@ -59,8 +59,7 @@ def login():
             return apology("must provide password", 403)
 
         # Query database for student_id
-        rows = db.execute("SELECT * FROM student WHERE id = :student_id",
-                          student_id=request.form.get("student_id"))
+        rows = db.execute("SELECT * FROM student WHERE id = %s", request.form.get("student_id"))
 
         # Ensure student_id exists and password is correct
         if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
@@ -95,18 +94,17 @@ def register():
         if not request.form.get("password"):
             return apology('must provide password', 403)
         # check student_id is unique
-        if db.execute("SELECT * FROM student WHERE id = :student_id", student_id=request.form.get("student_id")):
+        if db.execute("SELECT * FROM student WHERE id = %s", request.form.get("student_id")):
             return apology("you already have an account", 403)
         # check password and confirmation are same
         if request.form.get("password") != request.form.get("confirm-password"):
             return apology("password and confirmation do not match", 403)
         # hash the password and create row in db
-        db.execute("INSERT INTO student(id, name, hash) VALUES (:student_id, :name, :hash)",
-                   student_id=request.form.get("student_id"),
-                   name=request.form.get("name"), hash=generate_password_hash(request.form.get("password")))
+        db.execute("INSERT INTO student(id, name, hash) VALUES (%s, %s, %s)",
+                   request.form.get("student_id"), generate_password_hash(request.form.get("password")))
 
         # make sure that the new user is logged in
-        rows = db.execute("SELECT * FROM student WHERE id = :student_id", student_id=request.form.get("student_id"))
+        rows = db.execute("SELECT * FROM student WHERE id = %s", request.form.get("student_id"))
         # set the session so we know who is logged in
         session["user_id"] = rows[0]["id"]
         return redirect("/")
@@ -142,9 +140,7 @@ def books():
 def transactions():
     """Show history of transactions"""
     rows = db.execute(
-        "SELECT * FROM transaction WHERE student_id = :student_id ORDER BY date_returned ASC, date_borrowed DESC "
-        "LIMIT 8",
-        student_id=session["user_id"])
+        "SELECT * FROM transaction WHERE student_id = %s ORDER BY date_returned ASC, date_borrowed DESC LIMIT 8", session["user_id"])
     transaction_history = []
     for row in rows:
         transaction_history.append([row['date_borrowed'], row['date_returned'], row['book_isbn'],
@@ -163,14 +159,13 @@ def borrow():
     else:
         isbn = request.form.get("isbn")
         today = date.today().strftime('%Y-%m-%d')
-        copies_available = int(db.execute("SELECT copies from book WHERE isbn = :isbn", isbn=isbn)[0]['copies'])
+        copies_available = int(db.execute("SELECT copies from book WHERE isbn = %s", isbn)[0]['copies'])
 
         if not copies_available:
             return apology('Sorry, no copies available')
         else:
-            db.execute("UPDATE book SET copies = copies -1 WHERE isbn = :isbn", isbn=isbn)
-            db.execute("INSERT INTO transaction VALUES (:student, :isbn, :date_borrowed, :date_returned)",
-                       student=session["user_id"], isbn=isbn, date_borrowed=today, date_returned='0000:00:00')
+            db.execute("UPDATE book SET copies = copies -1 WHERE isbn = %s", isbn)
+            db.execute("INSERT INTO transaction VALUES (%s, %s, %s, %s)", session["user_id"], isbn, today, '0000:00:00')
 
         flash("Book has been borrowed.")
         return redirect("/history")
@@ -187,15 +182,12 @@ def return_books():
         today = date.today().strftime('%Y-%m-%d')
         # RETURN A BOOK
         try:
-            db.execute(
-                "UPDATE transaction SET date_returned = :date WHERE book_isbn = :isbn AND student_id = :id AND "
-                "date_returned = :empty",
-                isbn=isbn, id=session["user_id"], date=today, empty='0000:00:00')
-            db.execute("UPDATE book SET copies = copies + 1 WHERE isbn = :isbn", isbn=isbn)
+            db.execute("UPDATE transaction SET date_returned = %s WHERE book_isbn = %s AND student_id = %s AND "
+                       "date_returned = %s", today, isbn, session["user_id"], '0000:00:00')
+            db.execute("UPDATE book SET copies = copies + 1 WHERE isbn = %s", isbn)
             record = db.execute(
-                "SELECT date_borrowed FROM transaction WHERE book_isbn = :isbn AND student_id = :id AND date_returned "
-                "= :today",
-                isbn=isbn, id=session["user_id"], today=date.today())
+                "SELECT date_borrowed FROM transaction WHERE book_isbn = %s AND student_id = %s AND date_returned = %s",
+                isbn, session["user_id"], date.today())
             due = record[0]["date_borrowed"]
             fine = Fine(5, due, session["user_id"])
             print(f'fine: {repr(fine)}')
@@ -242,9 +234,9 @@ def addstock():
         year = request.form.get("year")
         copies = request.form.get("copies")
 
-        db.execute("INSERT INTO book(isbn, title, author, year, copies) VALUES(:isbn, :title, :author, :year, :copies)",
-                   isbn=isbn, title=title, author=author, year=year, copies=copies)
-        flash("Title added")
+        db.execute(
+            "INSERT INTO book(isbn, title, author, year, copies) VALUES(%s, %s, %s, %s, %s)", isbn, title, author, year, copies)
+        flash(f"{title} added")
         return redirect("/")
 
 

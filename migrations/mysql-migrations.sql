@@ -11,23 +11,22 @@ DROP TABLE IF EXISTS student;
 CREATE TABLE student
 (
     id       varchar(20) PRIMARY KEY NOT NULL,
-    name     varchar(30) NOT NULL,
     hash     text NOT NULL
 );
 
 # ----
 # -- Data dump for student, a total of 2 rows
 # ----
-INSERT INTO student (id, name, hash)
-VALUES ("c7465688", "Aidan", "pbkdf2:sha256:150000$VSoXKJv9$a34e5c53fbdbe525b21c3a85e1bdd48c488b2afbb9feda27634df780eb6d1cb6");
-INSERT INTO student (id, name, hash)
-VALUES ("c3608824", "Rob", "pbkdf2:sha256:150000$VSoXKJv9$a34e5c53fbdbe525b21c3a85e1bdd48c488b2afbb9feda27634df780eb6d1cb6");
+INSERT INTO student (id, hash)
+VALUES ("c7465688", "pbkdf2:sha256:150000$VSoXKJv9$a34e5c53fbdbe525b21c3a85e1bdd48c488b2afbb9feda27634df780eb6d1cb6");
+INSERT INTO student (id, hash)
+VALUES ("c3608824", "pbkdf2:sha256:150000$VSoXKJv9$a34e5c53fbdbe525b21c3a85e1bdd48c488b2afbb9feda27634df780eb6d1cb6");
 # ----
 # -- Drop table for book
 # ----
 DROP TABLE IF EXISTS book;
 
-# ----
+# ----a
 # -- Table structure for book
 # ----
 CREATE TABLE book
@@ -46,9 +45,9 @@ INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781491952023","JavaSc
 INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781937785499","Programming Ruby 1.9 & 2.0 - The Pragmatic Programmers\' Guide","David Thomas","2013","2");
 INSERT INTO book (isbn,title,author,year,copies) VALUES ("9780135957059","The Pragmatic Programmer","David Thomas","2019","1");
 INSERT INTO book (isbn,title,author,year,copies) VALUES ("9780596516178","The Ruby Programming Language","David Flanagan","2008","1");
-INSERT INTO book (isbn,title,author,year,copies) VALUES ("9780132350884","Clean Code - A Handbook Of Agile Software Craftsmanship ","Robert C, Martin","2009","1");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9780132350884","Clean Code - A Handbook Of Agile Software Craftsmanship ","Robert C. Martin","2009","1");
 INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781593279288","Python Crash Course, 2nd Edition - A Hands-On, Project-Based Introduction To Programming","Eric Mathes","2019","1");
-INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781449369415","Introduction To Machine Learning With Python - A Guide For Data Scientists","Andreas C. Müller","2016","2");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781449369415","Introduction To Machine Learning With Python - A Guide For Data Scientists","Andreas C. Muller","2016","2");
 
 # ----
 # -- Drop table for transaction
