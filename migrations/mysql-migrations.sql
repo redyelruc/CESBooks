@@ -34,28 +34,28 @@ CREATE TABLE book
     isbn       varchar(13) NOT NULL,
     title      varchar(100),
     author     varchar(100),
-    year    varchar(10),
+    year       integer,
     copies     integer
 );
 
 # ----
 # -- Data dump for book, a total of 7 rows
 # ----
-INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781491952023","JavaScript: The Definitive Guide","David Flanagan","2020","2");
-INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781937785499","Programming Ruby 1.9 & 2.0 - The Pragmatic Programmers\' Guide","David Thomas","2013","2");
-INSERT INTO book (isbn,title,author,year,copies) VALUES ("9780135957059","The Pragmatic Programmer","David Thomas","2019","1");
-INSERT INTO book (isbn,title,author,year,copies) VALUES ("9780596516178","The Ruby Programming Language","David Flanagan","2008","1");
-INSERT INTO book (isbn,title,author,year,copies) VALUES ("9780132350884","Clean Code - A Handbook Of Agile Software Craftsmanship ","Robert C. Martin","2009","1");
-INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781593279288","Python Crash Course, 2nd Edition - A Hands-On, Project-Based Introduction To Programming","Eric Mathes","2019","1");
-INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781449369415","Introduction To Machine Learning With Python - A Guide For Data Scientists","Andreas C. Muller","2016","2");
-INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781617298691","Spring Start Here - Learn What You Need And Learn It Well","Laurentiu Spilca", "2021", "2");
-INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781430265337","Introducing Spring Framework - A Primer","Felipe Gutierrez","2014","1");
-INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781491956250", "Microservice Architecture - Aligning Principles, Practices, And Culture","Irakli Nadareishvili","2016","2");
-INSERT INTO book (isbn,title,author,year,copies) VALUES ("9783319994192","Java in two semesters (4th edition)", "Quentin Charatan","2019","1");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781491952023", "JavaScript: The Definitive Guide", "David Flanagan", "2020", "2");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781937785499", "Programming Ruby 1.9 & 2.0 - The Pragmatic Programmers\' Guide", "David Thomas", "2013", "2");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9780135957059", "The Pragmatic Programmer", "David Thomas", "2019", "1");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9780596516178", "The Ruby Programming Language", "David Flanagan", "2008", "1");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9780132350884", "Clean Code - A Handbook Of Agile Software Craftsmanship", "Robert C. Martin", "2009", "1");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781593279288", "Python Crash Course, 2nd Edition - A Hands-On, Project-Based Introduction To Programming", "Eric Mathes", "2019", "1");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781449369415", "Introduction To Machine Learning With Python - A Guide For Data Scientists", "Andreas C. Muller", "2016", "2");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781617298691", "Spring Start Here - Learn What You Need And Learn It Well", "Laurentiu Spilca", "2021", "2");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781430265337", "Introducing Spring Framework - A Primer","Felipe Gutierrez", "2014", "1");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781491956250", "Microservice Architecture - Aligning Principles, Practices, And Culture", "Irakli Nadareishvili", "2016", "2");
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9783319994192", "Java in two semesters (4th edition)", "Quentin Charatan", "2019", "1");
 INSERT INTO book (isbn,title,author,year,copies) VALUES ("9780321349606", "Java concurrency in practice","Brian Goetz", "2015", "2");
 INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781543057386", "Distributed systems (3rd edition)","Maarten van Steen", "2017", "2");
 INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781292097619", "Fundamentals of database systems (7th edition)", "Ramez Elmasri", "2016", "2");
-
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9789813221871", "An Introduction To Component-Based Software Development", "Lau Kung-Kiu", "2017", "1");
 # ----
 # -- Drop table for transaction
 # ----

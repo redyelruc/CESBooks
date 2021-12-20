@@ -5,11 +5,12 @@ from flask import Flask, flash, redirect, render_template, request, session
 from flask_session import Session
 from tempfile import mkdtemp
 
+from constants import MAX_BORROWING_DURATION
 from fine import Fine
 
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
-from helpers import apology, login_required, is_overdue
+from helpers import apology, login_required, is_overdue, days_between
 import isbnlib
 import requests
 
@@ -188,14 +189,19 @@ def return_books():
             record = db.execute(
                 "SELECT date_borrowed FROM transaction WHERE book_isbn = %s AND student_id = %s AND date_returned = %s",
                 isbn, session["user_id"], date.today())
-            due = record[0]["date_borrowed"]
-            fine = Fine(5, due, session["user_id"])
-            print(f'fine: {repr(fine)}')
-            url = "https://localhost:8081/post"
-            r = requests.post(url, data=fine.details)
-            print(r.status_code)
-            print(r.text)
-            flash("Thank you for your return!")
+
+            # check, and issue fine if needed
+            date_borrowed = record[0]["date_borrowed"]
+            if days_between(date_borrowed, date.today()) > MAX_BORROWING_DURATION:
+                fine = Fine(date_borrowed, session["user_id"])
+                print(f'fine: {repr(fine)}')
+                # url = "https://localhost:8081/post"
+                # r = requests.post(url, data=fine.details)
+                # print(r.status_code)
+                # print(r.text)
+                flash(f"Thanks you for your return. You have been fined £{fine.amount}. Please login to the Payment Portal to pay the fine.")
+            else:
+                flash("Thank you for your return!")
         except Exception as e:
             print(e)
 
