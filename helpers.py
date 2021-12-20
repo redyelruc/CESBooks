@@ -1,10 +1,8 @@
-import os
-import requests
-import urllib.parse
-from datetime import date, datetime
+from datetime import date
 
-from flask import redirect, render_template, request, session
+from flask import redirect, render_template, session
 from functools import wraps
+
 
 def apology(message, code=400):
     """Render message as an apology to user."""
@@ -24,7 +22,6 @@ def apology(message, code=400):
 def login_required(f):
     """
     Decorate routes to require login.
-
     http://flask.pocoo.org/docs/1.0/patterns/viewdecorators/
     """
     @wraps(f)
@@ -38,10 +35,11 @@ def login_required(f):
 def days_between(d1, d2):
     return abs((d2 - d1).days)
 
+
 def is_overdue(date_borrowed, date_returned):
-    if date_returned != None:
+    if date_returned is not None:
         return ''
     days_borrowed = days_between(date_borrowed, date.today())
     if days_borrowed < 14:
         return ''
-    return (f'{days_borrowed - 14} days')
+    return f'{days_borrowed - 14} days'
