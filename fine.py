@@ -1,10 +1,11 @@
 from datetime import timedelta, date
 from helpers import days_between
-
+from constants import *
 
 class Fine:
-    def __init__(self, amount_per_day, due_date, student_id):
-        self.amount = amount_per_day * days_between(due_date, date.today())
+    def __init__(self, borrowed, student_id):
+        self.days_borrowed = days_between(borrowed, date.today())
+        self.amount = FINE_AMOUNT_PER_DAY * days_between(borrowed + timedelta(days=MAX_BORROWING_DURATION), date.today())
         self.dueDate = date.today() + timedelta(days=14)
         self.type = 'LIBRARY_FINE'
         self.student_id = {'studentId': student_id}
