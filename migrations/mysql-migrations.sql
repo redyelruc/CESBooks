@@ -19,8 +19,7 @@ CREATE TABLE student
 # ----
 INSERT INTO student (id, hash)
 VALUES ("c7465688", "pbkdf2:sha256:150000$VSoXKJv9$a34e5c53fbdbe525b21c3a85e1bdd48c488b2afbb9feda27634df780eb6d1cb6");
-INSERT INTO student (id, hash)
-VALUES ("c3608824", "pbkdf2:sha256:150000$VSoXKJv9$a34e5c53fbdbe525b21c3a85e1bdd48c488b2afbb9feda27634df780eb6d1cb6");
+
 # ----
 # -- Drop table for book
 # ----
@@ -66,6 +65,7 @@ DROP TABLE IF EXISTS transaction;
 # ----
 CREATE TABLE transaction
 (
+    id               integer PRIMARY KEY AUTO_INCREMENT NOT NULL,
     student_id       varchar(20),
     book_isbn        char(13),
     date_borrowed    DATE,
@@ -78,9 +78,9 @@ CREATE TABLE transaction
 INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("c7465688","9780596516178","2021-11-21","2021-11-29");
 INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("c7465688","9781937785499","2021-11-26","2021-11-30");
 INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("c7465688","9780132350884","2021-11-27","2021-12-05");
-INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("c3608824","9781491952023","2021-11-20","2021-12-05");
-INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("c3608824","9781937785499","2021-11-23","0000-00-00");
-INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("c3608824","9780132350884","2021-11-01","0000-00-00");
+INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("c7465688","9781491952023","2021-11-20","2021-12-05");
+INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("c7465688","9781937785499","2021-11-23","0000-00-00");
+INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) VALUES ("c7465688","9780132350884","2021-11-01","0000-00-00");
 # ----
 # -- structure for index name on table student
 # ----
