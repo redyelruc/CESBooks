@@ -3,7 +3,7 @@ from datetime import date
 from flask import redirect, render_template, session
 from functools import wraps
 
-from constants import ISBN_PATTERN
+from constants.constants import ISBN_PATTERN, MAX_BORROWING_DURATION
 
 
 def apology(message, code=400):
@@ -34,17 +34,21 @@ def login_required(f):
     return decorated_function
 
 
-def days_between(d1, d2):
-    return abs((d2 - d1).days)
+def days_before(d1, d2):
+    if d1 < d2:
+        return (d2 - d1).days
+    else:
+        return 0
 
 
-def is_overdue(date_borrowed, date_returned):
+def calculate_days_overdue(date_borrowed, date_returned):
     if date_returned is not None:
         return ''
-    days_borrowed = days_between(date_borrowed, date.today())
-    if days_borrowed < 14:
+    days_borrowed = days_before(date_borrowed, date.today())
+    if days_borrowed < MAX_BORROWING_DURATION:
         return ''
-    return f'{days_borrowed - 14} days'
+    days_overdue = days_borrowed - MAX_BORROWING_DURATION
+    return f'{days_overdue} day' if days_overdue == 1 else f'{days_overdue} days'
 
 
 def is_valid_isbn(isbn):
@@ -70,7 +74,7 @@ def is_valid_num_copies(copies):
         num_copies = int(copies)
     except ValueError:
         raise ValueError('Invalid number of copies.')
-    if 100 < num_copies > 0:
+    if 0 < num_copies < 100:
         return copies
     else:
         raise ValueError('Invalid number of copies.')

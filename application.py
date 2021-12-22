@@ -5,19 +5,19 @@ from flask import Flask, flash, redirect, render_template, request, session
 from flask_session import Session
 from tempfile import mkdtemp
 
-from book import Book
-from constants import MAX_BORROWING_DURATION, INVOICES_URL
-from errors import IncompleteBookError
-from fine import Fine
+from classes.book import Book
+from constants.constants import MAX_BORROWING_DURATION, INVOICES_URL
+from errors.errors import IncompleteBookError
+from classes.fine import Fine
 
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
-from helpers import apology, login_required, is_overdue, days_between
+from helpers import apology, login_required, calculate_days_overdue, days_before
 import isbnlib
 import requests
 
 # Configure application
-from transaction import Transaction
+from classes.transaction import Transaction
 
 app = Flask(__name__)
 
@@ -128,7 +128,7 @@ def transactions():
     transaction_history = []
     for row in rows:
         transaction_history.append([row['date_borrowed'], row['date_returned'], row['book_isbn'],
-                                    is_overdue(row['date_borrowed'], row['date_returned'])])
+                                    calculate_days_overdue(row['date_borrowed'], row['date_returned'])])
 
     # redirect user to index page
     return render_template("transactions.html", transactions=transaction_history)
@@ -149,7 +149,8 @@ def borrow():
             return apology('Sorry, no copies available')
         else:
             db.execute("UPDATE book SET copies = copies -1 WHERE isbn = %s", isbn)
-            db.execute("INSERT INTO transaction VALUES (%s, %s, %s, %s)", session["user_id"], isbn, today, '0000:00:00')
+            db.execute("INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) "
+                       "VALUES (%s, %s, %s, %s)", session["user_id"], isbn, today, '0000:00:00')
 
         flash("Book has been borrowed.")
         return redirect("/history")
@@ -186,7 +187,7 @@ def return_books():
             message = 'Thanks for your return.'
 
             # check, and issue fine if needed
-            if days_between(transaction.date_borrowed, date.today()) > MAX_BORROWING_DURATION:
+            if days_before(transaction.date_borrowed, date.today()) > MAX_BORROWING_DURATION:
                 fine = Fine(transaction.date_borrowed, session["user_id"])
                 r = requests.post(INVOICES_URL, json=fine.details)
 
