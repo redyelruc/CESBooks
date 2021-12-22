@@ -34,14 +34,17 @@ def login_required(f):
     return decorated_function
 
 
-def days_between(d1, d2):
-    return abs((d2 - d1).days)
+def days_before(d1, d2):
+    if d1 < d2:
+        return (d2 - d1).days
+    else:
+        return 0
 
 
 def is_overdue(date_borrowed, date_returned):
     if date_returned is not None:
         return ''
-    days_borrowed = days_between(date_borrowed, date.today())
+    days_borrowed = days_before(date_borrowed, date.today())
     if days_borrowed < 14:
         return ''
     return f'{days_borrowed - 14} days'
