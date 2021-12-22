@@ -1,7 +1,7 @@
 import unittest
 from helpers import *
 from datetime import datetime, date, timedelta
-from constants import MAX_BORROWING_DURATION
+from constants.constants import MAX_BORROWING_DURATION
 
 STUDENT_ID = 'c12312312'
 BORROWED_DATE = datetime.strptime('2020-04-01', '%Y-%m-%d').date()

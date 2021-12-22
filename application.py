@@ -5,10 +5,10 @@ from flask import Flask, flash, redirect, render_template, request, session
 from flask_session import Session
 from tempfile import mkdtemp
 
-from book import Book
-from constants import MAX_BORROWING_DURATION, INVOICES_URL
-from errors import IncompleteBookError
-from fine import Fine
+from classes.book import Book
+from constants.constants import MAX_BORROWING_DURATION, INVOICES_URL
+from errors.errors import IncompleteBookError
+from classes.fine import Fine
 
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -17,7 +17,7 @@ import isbnlib
 import requests
 
 # Configure application
-from transaction import Transaction
+from classes.transaction import Transaction
 
 app = Flask(__name__)
 
@@ -149,7 +149,8 @@ def borrow():
             return apology('Sorry, no copies available')
         else:
             db.execute("UPDATE book SET copies = copies -1 WHERE isbn = %s", isbn)
-            db.execute("INSERT INTO transaction VALUES (%s, %s, %s, %s)", session["user_id"], isbn, today, '0000:00:00')
+            db.execute("INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) "
+                       "VALUES (%s, %s, %s, %s)", session["user_id"], isbn, today, '0000:00:00')
 
         flash("Book has been borrowed.")
         return redirect("/history")

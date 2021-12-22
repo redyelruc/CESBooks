@@ -3,7 +3,7 @@ from datetime import date
 from flask import redirect, render_template, session
 from functools import wraps
 
-from constants import ISBN_PATTERN, MAX_BORROWING_DURATION
+from constants.constants import ISBN_PATTERN, MAX_BORROWING_DURATION
 
 
 def apology(message, code=400):

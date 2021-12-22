@@ -1,6 +1,6 @@
 from datetime import timedelta, date
 from helpers import days_before
-from constants import *
+from constants.constants import *
 
 
 class Fine:

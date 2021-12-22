@@ -1,5 +1,5 @@
 import unittest
-from fine import Fine
+from classes.fine import Fine
 from datetime import datetime, date
 
 STUDENT_ID = 'c12312312'
