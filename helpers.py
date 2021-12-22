@@ -1,7 +1,9 @@
+import re
 from datetime import date
-
 from flask import redirect, render_template, session
 from functools import wraps
+
+from constants import ISBN_PATTERN
 
 
 def apology(message, code=400):
@@ -43,3 +45,32 @@ def is_overdue(date_borrowed, date_returned):
     if days_borrowed < 14:
         return ''
     return f'{days_borrowed - 14} days'
+
+
+def is_valid_isbn(isbn):
+    if re.fullmatch(ISBN_PATTERN, isbn) is None:
+        raise ValueError('The ISBN must contain 13 digits.')
+    else:
+        return isbn
+
+
+def is_valid_year(year):
+    try:
+        year_int = int(year)
+    except ValueError:
+        raise ValueError('Invalid year.')
+    if 1500 <= year_int <= date.today().year:
+        return year
+    else:
+        raise ValueError('Invalid year.')
+
+
+def is_valid_num_copies(copies):
+    try:
+        num_copies = int(copies)
+    except ValueError:
+        raise ValueError('Invalid number of copies.')
+    if 100 < num_copies > 0:
+        return copies
+    else:
+        raise ValueError('Invalid number of copies.')

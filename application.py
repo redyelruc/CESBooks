@@ -207,12 +207,10 @@ def add():
         return render_template("add.html")
     else:
         isbn = request.form.get("isbn")
-        book_details = isbnlib.meta(isbn)
+        details = isbnlib.meta(isbn)
         cover = isbnlib.cover(isbn)
-        book_details['cover'] = cover['thumbnail']
-
-        if "ISBN-13" in book_details:
-            book_details['ISBN'] = book_details.pop("ISBN-13")
+        book_details = {'isbn': details['ISBN-13'], 'title': details['Title'], 'author': details['Authors'][0],
+                        'year': details['Year'], 'cover': cover['thumbnail'], 'copies': 1}
         return render_template("addstock.html", **book_details)
 
 
@@ -224,10 +222,11 @@ def addstock():
                     request.form.get("year"), request.form.get("copies"))
         db.execute("INSERT INTO book(isbn, title, author, year, copies) VALUES(%s, %s, %s, %s, %s)",
                    book.isbn, book.title, book.author, book.year, book.copies)
+
         flash(f"{book.title} added")
         return redirect("/")
-    except IncompleteBookError as e:
-        flash(e)
+    except (IncompleteBookError, ValueError) as e:
+        flash(f'{e} The book was not added to the database.')
         return render_template("add.html")
 
 
