@@ -70,7 +70,7 @@ def is_valid_num_copies(copies):
         num_copies = int(copies)
     except ValueError:
         raise ValueError('Invalid number of copies.')
-    if 100 < num_copies > 0:
+    if 0 < num_copies < 100:
         return copies
     else:
         raise ValueError('Invalid number of copies.')
