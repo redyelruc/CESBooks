@@ -1,9 +1,11 @@
 import re
 from datetime import date
-from flask import redirect, render_template, session
 from functools import wraps
 
+from flask import redirect, render_template, session
+
 from constants.constants import ISBN_PATTERN, PIN_PATTERN, MAX_BORROWING_DURATION
+import classes.book
 
 
 def apology(message, code=400):
@@ -22,16 +24,26 @@ def apology(message, code=400):
 
 
 def login_required(f):
-    """
-    Decorate routes to require login.
-    http://flask.pocoo.org/docs/1.0/patterns/viewdecorators/
-    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if session.get("user_id") is None:
             return redirect("/login")
         return f(*args, **kwargs)
     return decorated_function
+
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get("admin") is None:
+            return redirect("/login")
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def select_book(db, isbn):
+    book_records = db.execute("SELECT * FROM book WHERE isbn = %s LIMIT 1", isbn)
+    return None if not book_records else classes.book.Book(book_records[0])
 
 
 def days_before(d1, d2):
