@@ -1,0 +1,28 @@
+{% extends "admin/admin_layout.html" %}
+
+{% block title %}
+    All Students
+{% endblock %}
+
+{% block main %}
+
+    <table class="table">
+      <thead class="thead-light">
+        <tr>
+          <th class=normal-width scope="col">Student Id</th>
+          <th class=wide-width scope="col">On Loan</th>
+          <th class=normal-width scope="col">Overdue</th>
+        </tr>
+      </thead>
+      <tbody>
+    {% for row in students %}
+      <tr>
+        <td>{{ row[0] }}</td>
+        <td>{{ row[1] }}</td>
+        <td>{{ row[2] }}</td>
+      </tr>
+    {% endfor %}
+      </tbody>
+    </table>
+
+{% endblock %}

@@ -1,11 +1,11 @@
-{% extends "layout.html" %}
+{% extends "admin/admin_layout.html" %}
 
 {% block title %}
     Add New Title
 {% endblock %}
 
 {% block main %}
-    <form action="/addstock" method="post">
+    <form action="/admin/addstock" method="post">
         <p>
             <div class="form-group">
                 <img src="{{ cover }}" width="100" height="120" alt="book cover">
