@@ -1,0 +1,32 @@
+{% extends "admin/admin_layout.html" %}
+
+{% block title %}
+    All Titles
+{% endblock %}
+
+{% block main %}
+
+    <table class="table">
+      <thead class="thead-light">
+        <tr>
+          <th class=normal-width scope="col">ISBN</th>
+          <th class=wide-width scope="col">Title </th>
+          <th class=normal-width scope="col">Author</th>
+          <th class=narrow-width scope="col">Year</th>
+          <th class=narrow-width scope="col">Copies</th>
+        </tr>
+      </thead>
+      <tbody>
+    {% for row in books %}
+      <tr>
+        <td>{{ row[0] }}</td>
+        <td>{{ row[1] }}</td>
+        <td>{{ row[2] }}</td>
+        <td>{{ row[3] }}</td>
+        <td>{{ row[4] }}</td>
+      </tr>
+    {% endfor %}
+      </tbody>
+    </table>
+
+{% endblock %}

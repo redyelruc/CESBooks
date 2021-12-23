@@ -1,9 +1,11 @@
 import re
 from datetime import date
-from flask import redirect, render_template, session
 from functools import wraps
 
-from constants.constants import ISBN_PATTERN, MAX_BORROWING_DURATION
+from flask import redirect, render_template, session
+
+from constants.constants import ISBN_PATTERN, PIN_PATTERN, MAX_BORROWING_DURATION
+import classes.book
 
 
 def apology(message, code=400):
@@ -22,16 +24,26 @@ def apology(message, code=400):
 
 
 def login_required(f):
-    """
-    Decorate routes to require login.
-    http://flask.pocoo.org/docs/1.0/patterns/viewdecorators/
-    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if session.get("user_id") is None:
             return redirect("/login")
         return f(*args, **kwargs)
     return decorated_function
+
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get("admin") is None:
+            return redirect("/login")
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def select_book(db, isbn):
+    book_records = db.execute("SELECT * FROM book WHERE isbn = %s LIMIT 1", isbn)
+    return None if not book_records else classes.book.Book(book_records[0])
 
 
 def days_before(d1, d2):
@@ -58,6 +70,13 @@ def is_valid_isbn(isbn):
         return isbn
 
 
+def is_valid_pin(pin):
+    if re.fullmatch(PIN_PATTERN, pin) is None:
+        raise ValueError('The PIN must be 6 digits long.')
+    else:
+        return pin
+
+
 def is_valid_year(year):
     try:
         year_int = int(year)
@@ -74,7 +93,9 @@ def is_valid_num_copies(copies):
         num_copies = int(copies)
     except ValueError:
         raise ValueError('Invalid number of copies.')
-    if 0 < num_copies < 100:
+    if 0 <= num_copies <= 99:
         return copies
     else:
         raise ValueError('Invalid number of copies.')
+
+

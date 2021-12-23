@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 from cs50 import SQL
 from flask import Flask, flash, redirect, render_template, request, session
@@ -6,18 +6,21 @@ from flask_session import Session
 from tempfile import mkdtemp
 
 from classes.book import Book
-from constants.constants import MAX_BORROWING_DURATION, INVOICES_URL
-from errors.errors import IncompleteBookError
+from classes.transaction import Transaction
 from classes.fine import Fine
+from constants.constants import *
+from errors.errors import IncompleteBookError
+
 
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
-from helpers import apology, login_required, calculate_days_overdue, days_before
+from helpers import apology, login_required, admin_required, calculate_days_overdue, days_before, is_valid_pin, select_book
+
 import isbnlib
 import requests
 
 # Configure application
-from classes.transaction import Transaction
+
 
 app = Flask(__name__)
 
@@ -45,6 +48,19 @@ Session(app)
 db = SQL("mysql://redyelruc:financered180974finance@127.0.0.1:3306/finance")
 
 
+@app.route("/api/register", methods=["POST"])
+def register():
+    """Register a new student"""
+    student_id = request.json['student_id']
+    # check student_id is not already registered
+    if db.execute("SELECT * FROM student WHERE id = %s", student_id):
+        return student_id, 204
+
+    # create row in db with default password
+    db.execute("INSERT INTO student(id, hash) VALUES (%s, %s)", student_id, generate_password_hash("000000"))
+    return student_id, 201
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     """Log user in"""
@@ -54,19 +70,25 @@ def login():
     # User reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
 
-        if not request.form.get("student_id"):
-            return apology("must provide student_id", 403)
-        elif not request.form.get("password"):
-            return apology("must provide password", 403)
+        student_id = request.form.get("student_id")
+        pin = request.form.get("pin")
+        if not student_id or not pin:
+            return apology("incomplete details", 403)
 
-        rows = db.execute("SELECT * FROM student WHERE id = %s", request.form.get("student_id"))
+        rows = db.execute("SELECT * FROM student WHERE id = %s", student_id)
         # Ensure student_id exists and password is correct
-        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
+        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], pin):
             return apology("invalid details", 403)
 
-        # Remember which user has logged in
-        session["user_id"] = rows[0]["id"]
+        if pin == '000000':
+            session["new_user"] = student_id
+            return redirect("/firstlogin")
 
+        if student_id == 'admin':
+            session['admin'] = True
+            return redirect("/admin/books")
+        # Remember which user has logged in
+        session["user_id"] = student_id
         return redirect("/")
 
     # User reached route via GET (as by clicking a link or via redirect)
@@ -74,23 +96,34 @@ def login():
         return render_template("login.html")
 
 
-# @login_required
-# @app.route("firstlogin")
-# def firstlogin():
-#     """Update Password"""
+@app.route("/firstlogin", methods=["GET", "POST"])
+def firstlogin():
+    """Update Password"""
+    if request.method == "GET":
+        return render_template("firstlogin.html", student_id=session['new_user'])
+    else:
+        pin = request.form.get("pin")
+        pin_confirmation = request.form.get("confirm-pin")
 
+        try:
+            is_valid_pin(pin)
+        except ValueError as e:
+            flash(str(e), 'error')
+            return redirect("/firstlogin")
 
-@app.route("/register", methods=["POST"])
-def register():
-    """Register user"""
-    student_id = request.json['student_id']
-    # check student_id is not already registered
-    if db.execute("SELECT * FROM student WHERE id = %s", student_id):
-        return student_id, 204
-
-    # create row in db with default password
-    db.execute("INSERT INTO student(id, hash) VALUES (%s, %s)", student_id, generate_password_hash("000000"))
-    return student_id, 201
+        if pin != pin_confirmation:
+            flash('Your pin and confirmation do not match. Please try again.', 'error')
+            return redirect("/firstlogin")
+        elif pin == '000000':
+            flash('You cannot use the default pin. Please try again.', 'error')
+            return redirect("/firstlogin")
+        else:
+            # save new pin to the db and log in the student
+            session['new_user'] = None
+            session["user_id"] = request.form.get("student_id")
+            db.execute("UPDATE student SET hash = %s WHERE id = %s", generate_password_hash(pin), session["user_id"])
+            flash('You have successfully updated your pin. Thanks you.')
+            return redirect("/")
 
 
 @app.route("/logout")
@@ -143,16 +176,21 @@ def borrow():
     else:
         isbn = request.form.get("isbn")
         today = date.today().strftime('%Y-%m-%d')
-        copies_available = int(db.execute("SELECT copies from book WHERE isbn = %s", isbn)[0]['copies'])
+        book = select_book(db, isbn)
 
-        if not copies_available:
-            return apology('Sorry, no copies available')
+        if not book:
+            flash(BOOK_NOT_FOUND_MESSAGE, 'error')
+            return redirect("/")
+
+        if book.copies == 0:
+            message = 'Sorry, no copies available.'
         else:
             db.execute("UPDATE book SET copies = copies -1 WHERE isbn = %s", isbn)
             db.execute("INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) "
                        "VALUES (%s, %s, %s, %s)", session["user_id"], isbn, today, '0000:00:00')
+            message = f"You have borrowed '{ book.title }' until {(date.today() + timedelta(days=14)).strftime('%Y-%m-%d')}."
 
-        flash("Book has been borrowed.")
+        flash(message)
         return redirect("/history")
 
 
@@ -164,11 +202,11 @@ def return_books():
         return render_template("return.html")
     else:
         today = date.today().strftime('%Y-%m-%d')
-        book = select_book(request.form.get("isbn"))
+        book = select_book(db, request.form.get("isbn"))
 
         if not book:
-            flash("This book is not in our database.")
-            return redirect("/books")
+            flash(BOOK_NOT_FOUND_MESSAGE, 'error')
+            return redirect("/")
 
         # RETURN A BOOK
         try:
@@ -176,8 +214,8 @@ def return_books():
                 "SELECT * FROM transaction WHERE book_isbn = %s AND student_id = %s AND date_returned = '0000:00:00'",
                 book.isbn, session["user_id"])
 
-            if len(records) != 1:
-                flash("This is not one of the books you have borrowed.")
+            if len(records) < 1:
+                flash('This is not one of the books you have borrowed.', 'error')
                 return redirect("/history")
 
             transaction = Transaction(records[0])
@@ -200,23 +238,55 @@ def return_books():
     return redirect("/history")
 
 
-@app.route("/add", methods=["GET", "POST"])
-@login_required
+@app.route("/admin/books", methods=["GET", "POST"])
+@admin_required
+def admin_books():
+    """List all books"""
+    rows = db.execute("SELECT * FROM book ORDER BY title")
+    booklist = []
+
+    for row in rows:
+        booklist.append([row['isbn'], row['title'], row['author'], row['year'], row['copies']])
+    if request.method == "GET":
+
+        return render_template("admin/admin_books.html", books=booklist)
+    else:
+        return render_template("admin/admin_books.html", books=booklist)
+
+
+@app.route("/admin/students", methods=["GET", "POST"])
+@admin_required
+def admin_students():
+    """List all books"""
+    students = db.execute("SELECT id FROM student WHERE id != 'admin' ORDER BY id")
+    studentlist = []
+
+    for student in students:
+        studentlist.append([student['id'], "", "" ])
+    if request.method == "GET":
+
+        return render_template("admin/admin_students.html", students=studentlist)
+    else:
+        return render_template("admin/admin_students.html", students=studentlist)
+
+
+@app.route("/admin/add", methods=["GET", "POST"])
+@admin_required
 def add():
     """Add a new title to the library."""
     if request.method == "GET":
-        return render_template("add.html")
+        return render_template("admin/add.html")
     else:
         isbn = request.form.get("isbn")
         details = isbnlib.meta(isbn)
         cover = isbnlib.cover(isbn)
         book_details = {'isbn': details['ISBN-13'], 'title': details['Title'], 'author': details['Authors'][0],
                         'year': details['Year'], 'cover': cover['thumbnail'], 'copies': 1}
-        return render_template("addstock.html", **book_details)
+        return render_template("admin/addstock.html", **book_details)
 
 
-@app.route("/addstock", methods=["POST"])
-@login_required
+@app.route("/admin/addstock", methods=["POST"])
+@admin_required
 def addstock():
     try:
         book = Book(request.form.get("isbn"), request.form.get("title"), request.form.get("author"),
@@ -224,11 +294,11 @@ def addstock():
         db.execute("INSERT INTO book(isbn, title, author, year, copies) VALUES(%s, %s, %s, %s, %s)",
                    book.isbn, book.title, book.author, book.year, book.copies)
 
-        flash(f"{book.title} added")
-        return redirect("/")
+        flash(f"{book.title} was added to the database.")
+        return redirect("/admin_books")
     except (IncompleteBookError, ValueError) as e:
-        flash(f'{e} The book was not added to the database.')
-        return render_template("add.html")
+        flash(f'{e} The book was not added to the database.', 'error')
+        return redirect("/admin/add")
 
 
 def errorhandler(e):
@@ -236,11 +306,6 @@ def errorhandler(e):
     if not isinstance(e, HTTPException):
         e = InternalServerError()
     return apology(e.name, e.code)
-
-
-def select_book(isbn):
-    book_records = db.execute("SELECT * FROM book WHERE isbn = %s", isbn)
-    return None if not book_records else Book(book_records[0])
 
 
 # Listen for errors

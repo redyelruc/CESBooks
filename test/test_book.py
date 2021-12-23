@@ -3,7 +3,7 @@ from classes.book import Book
 from errors.errors import IncompleteBookError
 
 VALID = {'isbn': '9781231231231', 'title': 'Book Title', 'author': 'An Author', 'year': 2020, 'copies': 2}
-INVALID = {'isbn': '9', 'title': 232, 'author': 100, 'year': 'TwentyTwenty', 'copies': 0}
+INVALID = {'isbn': '9', 'title': 232, 'author': 100, 'year': 'TwentyTwenty', 'copies': -1}
 EMPTY_STRING = ''
 
 
