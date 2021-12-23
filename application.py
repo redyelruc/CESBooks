@@ -12,7 +12,7 @@ from classes.fine import Fine
 
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
-from helpers import apology, login_required, calculate_days_overdue, days_before
+from helpers import apology, login_required, calculate_days_overdue, days_before, is_valid_pin
 import isbnlib
 import requests
 
@@ -54,19 +54,22 @@ def login():
     # User reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
 
-        if not request.form.get("student_id"):
-            return apology("must provide student_id", 403)
-        elif not request.form.get("password"):
-            return apology("must provide password", 403)
+        student_id = request.form.get("student_id")
+        pin = request.form.get("pin")
+        if not student_id or not pin:
+            return apology("incomplete details", 403)
 
-        rows = db.execute("SELECT * FROM student WHERE id = %s", request.form.get("student_id"))
+        rows = db.execute("SELECT * FROM student WHERE id = %s", student_id)
         # Ensure student_id exists and password is correct
-        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
+        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], pin):
             return apology("invalid details", 403)
 
-        # Remember which user has logged in
-        session["user_id"] = rows[0]["id"]
+        if pin == '000000':
+            session["new_user"] = student_id
+            return redirect("/firstlogin")
 
+        # Remember which user has logged in
+        session["user_id"] = student_id
         return redirect("/")
 
     # User reached route via GET (as by clicking a link or via redirect)
@@ -74,10 +77,34 @@ def login():
         return render_template("login.html")
 
 
-# @login_required
-# @app.route("firstlogin")
-# def firstlogin():
-#     """Update Password"""
+@app.route("/firstlogin", methods=["GET", "POST"])
+def firstlogin():
+    """Update Password"""
+    if request.method == "GET":
+        return render_template("firstlogin.html", student_id=session['new_user'])
+    else:
+        pin = request.form.get("pin")
+        pin_confirmation = request.form.get("confirm-pin")
+
+
+        try:
+            is_valid_pin(pin)
+        except ValueError as e:
+            flash(e, 'error')
+            return redirect("/firstlogin")
+
+        if pin != pin_confirmation:
+            flash('Your pin and confirmation do not match. Please try again.', 'error')
+            return redirect("/firstlogin")
+        elif pin == '000000':
+            flash('You cannot use the default pin. Please try again.', 'error')
+            return redirect("/firstlogin")
+        else:
+            # save new pin to the db and log in the student
+            session['new_user'] = None
+            session["user_id"] = request.form.get("student_id")
+            return redirect("/")
+
 
 
 @app.route("/api/register", methods=["POST"])
@@ -228,7 +255,7 @@ def addstock():
         flash(f"{book.title} added")
         return redirect("/")
     except (IncompleteBookError, ValueError) as e:
-        flash(f'{e} The book was not added to the database.')
+        flash(f'{e} The book was not added to the database.', 'error')
         return render_template("add.html")
 
 

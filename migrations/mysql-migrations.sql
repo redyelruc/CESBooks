@@ -18,7 +18,8 @@ CREATE TABLE student
 # -- Data dump for student, a total of 2 rows
 # ----
 INSERT INTO student (id, hash)
-VALUES ("c7465688", "pbkdf2:sha256:150000$VSoXKJv9$a34e5c53fbdbe525b21c3a85e1bdd48c488b2afbb9feda27634df780eb6d1cb6");
+VALUES ("c7465688", "pbkdf2:sha256:150000$VSoXKJv9$a34e5c53fbdbe525b21c3a85e1bdd48c488b2afbb9feda27634df780eb6d1cb6"),
+       ("c1231231", "pbkdf2:sha256:260000$Istb2ASlVkANwJ7d$70d3a1b382fa60476058a7298322d0b6a6f09415518cca288d40c6311b406e6f");
 
 # ----
 # -- Drop table for book

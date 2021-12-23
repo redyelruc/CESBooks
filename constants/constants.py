@@ -9,3 +9,4 @@ INVOICES_URL = "http://localhost:8081/invoices"
 
 
 ISBN_PATTERN = re.compile(r'[\d]{13}')
+PIN_PATTERN = re.compile(r'[\d]{6}')

@@ -3,7 +3,7 @@ from datetime import date
 from flask import redirect, render_template, session
 from functools import wraps
 
-from constants.constants import ISBN_PATTERN, MAX_BORROWING_DURATION
+from constants.constants import ISBN_PATTERN, PIN_PATTERN, MAX_BORROWING_DURATION
 
 
 def apology(message, code=400):
@@ -56,6 +56,13 @@ def is_valid_isbn(isbn):
         raise ValueError('The ISBN must contain 13 digits.')
     else:
         return isbn
+
+
+def is_valid_pin(pin):
+    if re.fullmatch(PIN_PATTERN, pin) is None:
+        raise ValueError('The PIN must be 6 digits long.')
+    else:
+        return pin
 
 
 def is_valid_year(year):
