@@ -7,7 +7,7 @@ class Fine:
     def __init__(self, borrowed, student_id):
         self.days_borrowed = days_before(borrowed, date.today())
         self.amount = self.calculate_fine(borrowed)
-        self.due = (date.today() + timedelta(days=14)).strftime("%Y-%m-%d")
+        self.due = (date.today() + timedelta(days=MAX_PAYMENT_DURATION)).strftime("%Y-%m-%d")
         self.type = 'LIBRARY_FINE'
         self.student_id = {'studentId': str(student_id)}
         self.details = {'amount': self.amount, 'dueDate': self.due, 'type': self.type, 'account': self.student_id}

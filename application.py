@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 from cs50 import SQL
 from flask import Flask, flash, redirect, render_template, request, session
@@ -80,7 +80,7 @@ def login():
 #     """Update Password"""
 
 
-@app.route("/register", methods=["POST"])
+@app.route("/api/register", methods=["POST"])
 def register():
     """Register user"""
     student_id = request.json['student_id']
@@ -143,16 +143,17 @@ def borrow():
     else:
         isbn = request.form.get("isbn")
         today = date.today().strftime('%Y-%m-%d')
-        copies_available = int(db.execute("SELECT copies from book WHERE isbn = %s", isbn)[0]['copies'])
+        book = select_book(isbn)
 
-        if not copies_available:
-            return apology('Sorry, no copies available')
+        if book.copies == 0:
+            message = 'Sorry, no copies available.'
         else:
             db.execute("UPDATE book SET copies = copies -1 WHERE isbn = %s", isbn)
             db.execute("INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) "
                        "VALUES (%s, %s, %s, %s)", session["user_id"], isbn, today, '0000:00:00')
+            message = f"'{ book.title }' has been borrowed until {(date.today() + timedelta(days=14)).strftime('%Y-%m-%d')}."
 
-        flash("Book has been borrowed.")
+        flash(message)
         return redirect("/history")
 
 
@@ -167,7 +168,7 @@ def return_books():
         book = select_book(request.form.get("isbn"))
 
         if not book:
-            flash("This book is not in our database.")
+            flash('This book is not in our database.', 'error')
             return redirect("/books")
 
         # RETURN A BOOK
@@ -176,8 +177,8 @@ def return_books():
                 "SELECT * FROM transaction WHERE book_isbn = %s AND student_id = %s AND date_returned = '0000:00:00'",
                 book.isbn, session["user_id"])
 
-            if len(records) != 1:
-                flash("This is not one of the books you have borrowed.")
+            if len(records) < 1:
+                flash('This is not one of the books you have borrowed.', 'error')
                 return redirect("/history")
 
             transaction = Transaction(records[0])

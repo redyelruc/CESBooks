@@ -90,14 +90,9 @@ class TestHelpers(unittest.TestCase):
         result = is_valid_num_copies(1)
         self.assertEqual(result, 1)
 
-    def test_is_valid_num_copies_with_0_raises_ValueError(self):
-        try:
-            is_valid_num_copies(0)
-        except ValueError as e:
-            self.assertEqual(type(e), ValueError)
-            self.assertEqual('Invalid number of copies.', str(e))
-        else:
-            self.fail('ValueError not raised')
+    def test_is_valid_num_copies_with_0_returns_0(self):
+        result = is_valid_num_copies(0)
+        self.assertEqual(result, 0)
 
     def test_is_valid_num_copies_with_negative_integer_raises_ValueError(self):
         try:
