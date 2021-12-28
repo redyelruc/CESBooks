@@ -356,7 +356,7 @@ def addstock():
                    book.isbn, book.title, book.author, book.year, book.copies)
 
         flash(f"{book.title}{messages.BOOK_ADDED_SUCCESS}", 'alert-success')
-        return redirect("/admin_books")
+        return redirect("/admin/books")
 
     except (IncompleteBookError, NotValidISBNError, ValueError) as e:
         flash(f'{e}{messages.BOOK_NOT_ADDED_ERROR}', 'alert-danger')
