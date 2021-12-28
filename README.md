@@ -8,13 +8,14 @@ The application is written in Python using the Flask framework.
 2. Books - display all books in the library.
 3. Borrow - borrow a book using barcode scanner.
 4. Return - return a book using thebarcode scanner.
-5. Account- list the borrowng history.
-6. Register - allow new user to register for access.
+5. Account- display the user's borrowng history.
 
 ## Admin Features
-7. Add - add new books to the database using the barcode scanner.
-8. Books - display all books in the library.
-9. Account - view the borrowing history of any account.
+1. Add Title - add new books to the database using the barcode scanner.
+2. Books - display all books in the library.
+3. Students - dispay all students, and the number of books each has on loan/overdue.
+4. Current Loans - display all books currently on loan.
+5. Overdue - display all books that are overdue.
 
 ## Integrations
 1. The application integrates with a MySQL relational database.
