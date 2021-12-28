@@ -1,20 +1,20 @@
-from datetime import date, timedelta
+from datetime import timedelta
 
 from cs50 import SQL
-from flask import Flask, flash, redirect, render_template, request, session
+from flask import Flask, flash, request
 from flask_session import Session
 from tempfile import mkdtemp
 
 from classes.book import Book
 from classes.transaction import Transaction
 from classes.fine import Fine
-from constants.constants import *
-from errors.errors import IncompleteBookError
-
+from constants import constants
+from constants import messages
+from errors.errors import IncompleteBookError, NotValidISBNError
 
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
-from helpers import apology, login_required, admin_required, calculate_days_overdue, days_before, is_valid_pin, select_book
+from helpers import *
 
 import isbnlib
 import requests
@@ -51,13 +51,13 @@ db = SQL("mysql://redyelruc:financered180974finance@127.0.0.1:3306/finance")
 @app.route("/api/register", methods=["POST"])
 def register():
     """Register a new student"""
-    student_id = request.json['student_id']
+    student_id = request.json['studentId']
     # check student_id is not already registered
     if db.execute("SELECT * FROM student WHERE id = %s", student_id):
         return student_id, 204
 
-    # create row in db with default password
-    db.execute("INSERT INTO student(id, hash) VALUES (%s, %s)", student_id, generate_password_hash("000000"))
+    db.execute("INSERT INTO student(id, hash) VALUES (%s, %s)",
+               student_id, generate_password_hash(constants.DEFAULT_PIN))
     return student_id, 201
 
 
@@ -67,7 +67,6 @@ def login():
     # Forget any user_id
     session.clear()
 
-    # User reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
 
         student_id = request.form.get("student_id")
@@ -75,23 +74,23 @@ def login():
         if not student_id or not pin:
             return apology("incomplete details", 403)
 
-        rows = db.execute("SELECT * FROM student WHERE id = %s", student_id)
         # Ensure student_id exists and password is correct
+        rows = db.execute("SELECT * FROM student WHERE id = %s", student_id)
         if len(rows) != 1 or not check_password_hash(rows[0]["hash"], pin):
             return apology("invalid details", 403)
 
-        if pin == '000000':
+        # If this is first time the student has logged in, force them to change the pin
+        if pin == constants.DEFAULT_PIN:
             session["new_user"] = student_id
             return redirect("/firstlogin")
 
         if student_id == 'admin':
             session['admin'] = True
             return redirect("/admin/books")
-        # Remember which user has logged in
+
         session["user_id"] = student_id
         return redirect("/")
 
-    # User reached route via GET (as by clicking a link or via redirect)
     else:
         return render_template("login.html")
 
@@ -108,21 +107,18 @@ def firstlogin():
         try:
             is_valid_pin(pin)
         except ValueError as e:
-            flash(str(e), 'error')
+            flash(str(e), 'alert-danger')
             return redirect("/firstlogin")
 
         if pin != pin_confirmation:
-            flash('Your pin and confirmation do not match. Please try again.', 'error')
-            return redirect("/firstlogin")
-        elif pin == '000000':
-            flash('You cannot use the default pin. Please try again.', 'error')
+            flash(messages.PIN_CONFIRMATION_ERROR, 'alert-danger')
             return redirect("/firstlogin")
         else:
-            # save new pin to the db and log in the student
+            # save new pin to the db and log the student in
             session['new_user'] = None
             session["user_id"] = request.form.get("student_id")
             db.execute("UPDATE student SET hash = %s WHERE id = %s", generate_password_hash(pin), session["user_id"])
-            flash('You have successfully updated your pin. Thanks you.')
+            flash(messages.PIN_UPDATE_SUCCESS, 'alert-success')
             return redirect("/")
 
 
@@ -160,10 +156,11 @@ def transactions():
         session["user_id"])
     transaction_history = []
     for row in rows:
-        transaction_history.append([row['date_borrowed'], row['date_returned'], row['book_isbn'],
-                                    calculate_days_overdue(row['date_borrowed'], row['date_returned'])])
+        if row['date_returned']:
+            row['date_returned'] = row['date_returned'].strftime(constants.DATE_DISPLAY_FORMAT)
+        transaction_history.append([row['date_borrowed'].strftime(constants.DATE_DISPLAY_FORMAT), row['date_returned'],
+                                    row['book_isbn'], calculate_days_overdue(row['date_borrowed'], row['date_returned'])])
 
-    # redirect user to index page
     return render_template("transactions.html", transactions=transaction_history)
 
 
@@ -175,11 +172,11 @@ def borrow():
         return render_template("borrow.html", books=books)
     else:
         isbn = request.form.get("isbn")
-        today = date.today().strftime('%Y-%m-%d')
-        book = select_book(db, isbn)
+        today = date.today().strftime(constants.DATE_DB_FORMAT)
+        book = select_book(isbn)
 
         if not book:
-            flash(BOOK_NOT_FOUND_MESSAGE, 'error')
+            flash(messages.BOOK_NOT_FOUND_ERROR, 'alert-danger')
             return redirect("/")
 
         if book.copies == 0:
@@ -187,10 +184,11 @@ def borrow():
         else:
             db.execute("UPDATE book SET copies = copies -1 WHERE isbn = %s", isbn)
             db.execute("INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) "
-                       "VALUES (%s, %s, %s, %s)", session["user_id"], isbn, today, '0000:00:00')
-            message = f"You have borrowed '{ book.title }' until {(date.today() + timedelta(days=14)).strftime('%Y-%m-%d')}."
+                       "VALUES (%s, %s, %s, %s)", session["user_id"], isbn, today, constants.NO_DATE)
+            message = f"You have borrowed '{book.title}' until " \
+                      f"{(date.today() + timedelta(days=14)).strftime(constants.DATE_DISPLAY_FORMAT)}."
 
-        flash(message)
+        flash(message, 'alert-info')
         return redirect("/history")
 
 
@@ -202,38 +200,46 @@ def return_books():
         return render_template("return.html")
     else:
         today = date.today().strftime('%Y-%m-%d')
-        book = select_book(db, request.form.get("isbn"))
+        book = select_book(request.form.get("isbn"))
 
         if not book:
-            flash(BOOK_NOT_FOUND_MESSAGE, 'error')
+            flash(messages.BOOK_NOT_FOUND_ERROR, 'alert-danger')
             return redirect("/")
 
         # RETURN A BOOK
         try:
             records = db.execute(
-                "SELECT * FROM transaction WHERE book_isbn = %s AND student_id = %s AND date_returned = '0000:00:00'",
-                book.isbn, session["user_id"])
+                "SELECT * FROM transaction WHERE book_isbn = %s AND student_id = %s AND date_returned = %s",
+                book.isbn, session["user_id"], constants.NO_DATE)
 
             if len(records) < 1:
-                flash('This is not one of the books you have borrowed.', 'error')
+                flash('This is not one of the books you have borrowed.', 'alert-danger')
                 return redirect("/history")
 
             transaction = Transaction(records[0])
 
             db.execute("UPDATE transaction SET date_returned = %s WHERE id = %s", today, transaction.id)
             db.execute("UPDATE book SET copies = copies + 1 WHERE isbn = %s", book.isbn)
-            message = 'Thanks for your return.'
+            message = messages.BOOK_RETURNED_SUCCESS
 
-            # check, and issue fine if needed
-            if days_before(transaction.date_borrowed, date.today()) > MAX_BORROWING_DURATION:
-                fine = Fine(transaction.date_borrowed, session["user_id"])
-                r = requests.post(INVOICES_URL, json=fine.details)
-
-                message += f" You have been fined £{fine.amount}. Please log in to the Payment Portal to pay the " \
-                           f"invoice reference: {r.json()['reference']}. "
-            flash(message)
         except Exception as e:
-            print(e)
+            flash(str(e), 'alert-danger')
+
+        # Isolate and identify api connection issues if they exist
+        try:
+            # check, and issue fine if needed
+            if days_before(transaction.date_borrowed, date.today()) > constants.MAX_BORROWING_DURATION:
+                fine = Fine(transaction.date_borrowed, session["user_id"])
+
+                # Call out to API
+                r = requests.post(constants.INVOICES_URL, json=fine.details)
+                message += f"{messages.FINE_ISSUED} £{'{:.2f}'.format(fine.amount)}. " \
+                           f"{messages.VISIT_PAYMENT_PORTAL} {r.json()['reference']}."
+        except requests.exceptions.ConnectionError:
+            flash(f"{messages.BOOK_RETURNED_SUCCESS} {messages.API_CONNECTION_ERROR}", 'alert-danger')
+            return redirect("/history")
+
+        flash(message, 'alert-success')
 
     return redirect("/history")
 
@@ -244,30 +250,77 @@ def admin_books():
     """List all books"""
     rows = db.execute("SELECT * FROM book ORDER BY title")
     booklist = []
+    cols = [('ISBN', 'normal-width'), ('Title', 'wide-width'), ('Author', 'normal-width'), ('Year', 'narrow-width'),
+            ('Copies', 'narrow-width')]
 
     for row in rows:
         booklist.append([row['isbn'], row['title'], row['author'], row['year'], row['copies']])
     if request.method == "GET":
 
-        return render_template("admin/admin_books.html", books=booklist)
+        return render_template("admin/admin_books.html", title='All Titles', cols=cols, books=booklist)
     else:
-        return render_template("admin/admin_books.html", books=booklist)
+        return render_template("admin/admin_books.html", title='All Titles', cols=cols, books=booklist)
 
 
 @app.route("/admin/students", methods=["GET", "POST"])
 @admin_required
 def admin_students():
-    """List all books"""
+    """List all students, number of current loans and overdue books"""
     students = db.execute("SELECT id FROM student WHERE id != 'admin' ORDER BY id")
-    studentlist = []
+    student_list = []
 
     for student in students:
-        studentlist.append([student['id'], "", "" ])
+        current_loans = db.execute("SELECT count(*) FROM transaction WHERE student_id = %s AND date_returned = %s",
+                                   student['id'], constants.NO_DATE)
+        borrowed = (date.today() - timedelta(days=constants.MAX_BORROWING_DURATION))
+        overdue = db.execute("SELECT count(*) FROM transaction WHERE student_id = %s AND "
+                             "date_borrowed < %s AND date_returned = %s", student['id'], borrowed, constants.NO_DATE)
+
+        student_list.append([student['id'], current_loans[0]['count(*)'], overdue[0]['count(*)']])
+
     if request.method == "GET":
 
-        return render_template("admin/admin_students.html", students=studentlist)
+        return render_template("admin/admin_students.html", title='All Students', students=student_list)
     else:
-        return render_template("admin/admin_students.html", students=studentlist)
+        return render_template("admin/admin_students.html", title='All Students', students=student_list)
+
+
+@app.route("/admin/loans", methods=["GET"])
+@admin_required
+def admin_loans():
+    """List all students, number of current loans and overdue books"""
+    loans = db.execute("SELECT book_isbn, book.title, student_id, date_borrowed FROM transaction JOIN "
+                       "book ON transaction.book_isbn = book.isbn WHERE date_returned = %s", constants.NO_DATE)
+
+    cols = [('ISBN', 'normal-width'), ('Title', 'wide-width'), ('Student', 'normal-width'),
+            ('Borrowed', 'normal-width')]
+
+    loan_list = []
+    for book in loans:
+        loan_list.append([book['book_isbn'], book['title'], book['student_id'],
+                          book['date_borrowed'].strftime(constants.DATE_DISPLAY_FORMAT)])
+
+    return render_template("admin/admin_books.html", title='Current Loans', cols=cols, books=loan_list)
+
+
+@app.route("/admin/overdue", methods=["GET"])
+@admin_required
+def admin_overdue():
+    """List all students, number of current loans and overdue books"""
+    borrowed = (date.today() - timedelta(days=constants.MAX_BORROWING_DURATION))
+    overdue = db.execute("SELECT book_isbn, book.title, student_id, date_borrowed FROM transaction JOIN "
+                         "book ON transaction.book_isbn = book.isbn WHERE date_borrowed < %s AND date_returned = %s",
+                         borrowed, constants.NO_DATE)
+
+    cols = [('ISBN', 'normal-width'), ('Title', 'wide-width'), ('Student', 'normal-width'),
+            ('Borrowed', 'normal-width')]
+
+    overdue_list = []
+    for book in overdue:
+        overdue_list.append([book['book_isbn'], book['title'], book['student_id'],
+                             book['date_borrowed'].strftime(constants.DATE_DISPLAY_FORMAT)])
+
+    return render_template("admin/admin_books.html", title='Overdue Books', cols=cols, books=overdue_list)
 
 
 @app.route("/admin/add", methods=["GET", "POST"])
@@ -278,11 +331,19 @@ def add():
         return render_template("admin/add.html")
     else:
         isbn = request.form.get("isbn")
-        details = isbnlib.meta(isbn)
-        cover = isbnlib.cover(isbn)
-        book_details = {'isbn': details['ISBN-13'], 'title': details['Title'], 'author': details['Authors'][0],
-                        'year': details['Year'], 'cover': cover['thumbnail'], 'copies': 1}
-        return render_template("admin/addstock.html", **book_details)
+        try:
+            is_valid_isbn(isbn)
+            # Use isbnlib to look up the isbn and get all relevant details
+            details = isbnlib.meta(isbn)
+            cover = isbnlib.cover(isbn)
+
+            book_details = {'isbn': details['ISBN-13'], 'title': details['Title'], 'author': details['Authors'][0],
+                            'year': details['Year'], 'cover': cover['thumbnail'], 'copies': 1}
+            return render_template("admin/addstock.html", **book_details)
+
+        except (ValueError, isbnlib._exceptions.NotValidISBNError) as e:
+            flash(e, 'alert-danger')
+            return redirect('/admin/add')
 
 
 @app.route("/admin/addstock", methods=["POST"])
@@ -294,10 +355,11 @@ def addstock():
         db.execute("INSERT INTO book(isbn, title, author, year, copies) VALUES(%s, %s, %s, %s, %s)",
                    book.isbn, book.title, book.author, book.year, book.copies)
 
-        flash(f"{book.title} was added to the database.")
+        flash(f"{book.title}{messages.BOOK_ADDED_SUCCESS}", 'alert-success')
         return redirect("/admin_books")
-    except (IncompleteBookError, ValueError) as e:
-        flash(f'{e} The book was not added to the database.', 'error')
+
+    except (IncompleteBookError, NotValidISBNError, ValueError) as e:
+        flash(f'{e}{messages.BOOK_NOT_ADDED_ERROR}', 'alert-danger')
         return redirect("/admin/add")
 
 
@@ -306,6 +368,11 @@ def errorhandler(e):
     if not isinstance(e, HTTPException):
         e = InternalServerError()
     return apology(e.name, e.code)
+
+
+def select_book(isbn):
+    book_records = db.execute("SELECT * FROM book WHERE isbn = %s LIMIT 1", isbn)
+    return None if not book_records else Book(book_records[0])
 
 
 # Listen for errors

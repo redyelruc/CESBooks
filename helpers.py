@@ -1,11 +1,8 @@
 import re
 from datetime import date
 from functools import wraps
-
 from flask import redirect, render_template, session
-
-from constants.constants import ISBN_PATTERN, PIN_PATTERN, MAX_BORROWING_DURATION
-import classes.book
+from constants.constants import ISBN_PATTERN, PIN_PATTERN, MAX_BORROWING_DURATION, DEFAULT_PIN
 
 
 def apology(message, code=400):
@@ -41,11 +38,6 @@ def admin_required(f):
     return decorated_function
 
 
-def select_book(db, isbn):
-    book_records = db.execute("SELECT * FROM book WHERE isbn = %s LIMIT 1", isbn)
-    return None if not book_records else classes.book.Book(book_records[0])
-
-
 def days_before(d1, d2):
     if d1 < d2:
         return (d2 - d1).days
@@ -71,6 +63,8 @@ def is_valid_isbn(isbn):
 
 
 def is_valid_pin(pin):
+    if pin == DEFAULT_PIN:
+        raise ValueError('You cannot use the default PIN.')
     if re.fullmatch(PIN_PATTERN, pin) is None:
         raise ValueError('The PIN must be 6 digits long.')
     else:
