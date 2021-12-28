@@ -92,14 +92,14 @@ def login():
         return redirect("/")
 
     else:
-        return render_template("login.html")
+        return render_template("user/login.html")
 
 
 @app.route("/firstlogin", methods=["GET", "POST"])
 def firstlogin():
     """Update Password"""
     if request.method == "GET":
-        return render_template("firstlogin.html", student_id=session['new_user'])
+        return render_template("user/firstlogin.html", student_id=session['new_user'])
     else:
         pin = request.form.get("pin")
         pin_confirmation = request.form.get("confirm-pin")
@@ -144,7 +144,7 @@ def books():
         booklist.append([row['isbn'], row['title'], row['author'], row['year'], row['copies']])
 
     if request.method == "GET":
-        return render_template("books.html", books=booklist)
+        return render_template("user/books.html", books=booklist)
 
 
 @app.route("/history")
@@ -161,7 +161,7 @@ def transactions():
         transaction_history.append([row['date_borrowed'].strftime(constants.DATE_DISPLAY_FORMAT), row['date_returned'],
                                     row['book_isbn'], calculate_days_overdue(row['date_borrowed'], row['date_returned'])])
 
-    return render_template("transactions.html", transactions=transaction_history)
+    return render_template("user/transactions.html", transactions=transaction_history)
 
 
 @app.route("/borrow", methods=["GET", "POST"])
@@ -169,7 +169,7 @@ def transactions():
 def borrow():
     """Borrow a book"""
     if request.method == "GET":
-        return render_template("borrow.html", books=books)
+        return render_template("user/borrow.html", books=books)
     else:
         isbn = request.form.get("isbn")
         today = date.today().strftime(constants.DATE_DB_FORMAT)
@@ -197,7 +197,7 @@ def borrow():
 def return_books():
     """Return a book"""
     if request.method == "GET":
-        return render_template("return.html")
+        return render_template("user/return.html")
     else:
         today = date.today().strftime('%Y-%m-%d')
         book = select_book(request.form.get("isbn"))
