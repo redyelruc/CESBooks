@@ -35,8 +35,8 @@ CREATE TABLE book
     isbn       varchar(13) NOT NULL,
     title      varchar(100),
     author     varchar(100),
-    year       integer,
-    copies     integer
+    year       int,
+    copies     int
 );
 
 # ----
@@ -45,7 +45,7 @@ CREATE TABLE book
 INSERT INTO book (isbn,title,author,year,copies) VALUES ("9789813221871", "An Introduction To Component-Based Software Development", "Lau Kung-Kiu", "2017", "1");
 INSERT INTO book (isbn,title,author,year,copies) VALUES ("9780132350884", "Clean Code - A Handbook Of Agile Software Craftsmanship", "Robert C. Martin", "2009", "1");
 INSERT INTO book (isbn,title,author,year,copies) VALUES ("9780073523323", "Database System Concepts", "Abraham Silberschatz ", "2010", "1");
-INSERT INTO book (isbn,title,author,year,copies) VALUES ("9783827330437", "Design Patterns - Elements Of Reusable Object-Oriented Software", "Erich Gamma", "1995", "1")
+INSERT INTO book (isbn,title,author,year,copies) VALUES ("9783827330437", "Design Patterns - Elements Of Reusable Object-Oriented Software", "Erich Gamma", "1995", "1");
 INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781543057386", "Distributed systems (3rd edition)","Maarten van Steen", "2017", "2");
 INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781292097619", "Fundamentals of database systems (7th edition)", "Ramez Elmasri", "2016", "2");
 INSERT INTO book (isbn,title,author,year,copies) VALUES ("9781430265337", "Introducing Spring Framework - A Primer","Felipe Gutierrez", "2014", "1");
@@ -72,7 +72,7 @@ DROP TABLE IF EXISTS transaction;
 # ----
 CREATE TABLE transaction
 (
-    id               integer PRIMARY KEY AUTO_INCREMENT NOT NULL,
+    id               int NOT NULL PRIMARY KEY AUTO_INCREMENT,
     student_id       varchar(20),
     book_isbn        char(13),
     date_borrowed    DATE,

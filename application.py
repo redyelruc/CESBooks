@@ -1,3 +1,4 @@
+import os
 from datetime import timedelta
 
 from cs50 import SQL
@@ -45,7 +46,8 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # Configure CS50 Library to use SQL database
-db = SQL("mysql://redyelruc:financered180974finance@127.0.0.1:3306/finance")
+# db = SQL("mysql://redyelruc:financered180974finance@127.0.0.1:3306/finance")
+db = SQL(os.environ['DATABASE'])
 
 
 @app.route("/api/register", methods=["POST"])
@@ -159,7 +161,8 @@ def transactions():
         if row['date_returned']:
             row['date_returned'] = row['date_returned'].strftime(constants.DATE_DISPLAY_FORMAT)
         transaction_history.append([row['date_borrowed'].strftime(constants.DATE_DISPLAY_FORMAT), row['date_returned'],
-                                    row['book_isbn'], calculate_days_overdue(row['date_borrowed'], row['date_returned'])])
+                                    row['book_isbn'],
+                                    calculate_days_overdue(row['date_borrowed'], row['date_returned'])])
 
     return render_template("user/transactions.html", transactions=transaction_history)
 
