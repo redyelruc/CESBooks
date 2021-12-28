@@ -1,7 +1,7 @@
 import unittest
 from helpers import *
 from datetime import datetime, date, timedelta
-from constants.constants import MAX_BORROWING_DURATION
+from constants.constants import MAX_BORROWING_DURATION, DEFAULT_PIN
 
 STUDENT_ID = 'c12312312'
 BORROWED_DATE = datetime.strptime('2020-04-01', '%Y-%m-%d').date()
@@ -49,7 +49,7 @@ class TestHelpers(unittest.TestCase):
             self.assertEqual(type(e), ValueError)
             self.assertEqual('The ISBN must contain 13 digits.', str(e))
         else:
-            self.fail('ValueError not raised')
+            self.fail('ValueError not raised.')
 
     def test_is_valid_year_with_valid_year_as_string_of_digits_returns_year(self):
         result = is_valid_year('2020')
@@ -66,7 +66,7 @@ class TestHelpers(unittest.TestCase):
             self.assertEqual(type(e), ValueError)
             self.assertEqual('Invalid year.', str(e))
         else:
-            self.fail('ValueError not raised')
+            self.fail('ValueError not raised.')
 
     def test_is_valid_year_with_year_in_letters_raises_ValueError(self):
         try:
@@ -75,7 +75,7 @@ class TestHelpers(unittest.TestCase):
             self.assertEqual(type(e), ValueError)
             self.assertEqual('Invalid year.', str(e))
         else:
-            self.fail('ValueError not raised')
+            self.fail('ValueError not raised.')
 
     def test_is_valid_year_with_year_as_negative_integer_raises_ValueError(self):
         try:
@@ -84,7 +84,7 @@ class TestHelpers(unittest.TestCase):
             self.assertEqual(type(e), ValueError)
             self.assertEqual('Invalid year.', str(e))
         else:
-            self.fail('ValueError not raised')
+            self.fail('ValueError not raised.')
 
     def test_is_valid_num_copies_with_1_returns_1(self):
         result = is_valid_num_copies(1)
@@ -101,7 +101,7 @@ class TestHelpers(unittest.TestCase):
             self.assertEqual(type(e), ValueError)
             self.assertEqual('Invalid number of copies.', str(e))
         else:
-            self.fail('ValueError not raised')
+            self.fail('ValueError not raised.')
 
     def test_is_valid_num_copies_with_over_100_raises_ValueError(self):
         try:
@@ -110,7 +110,48 @@ class TestHelpers(unittest.TestCase):
             self.assertEqual(type(e), ValueError)
             self.assertEqual('Invalid number of copies.', str(e))
         else:
-            self.fail('ValueError not raised')
+            self.fail('ValueError not raised.')
+
+    def test_is_valid_pin_with_123456_returns_123456(self):
+        result = is_valid_pin('123456')
+        self.assertEqual(result, '123456')
+
+    def test_is_valid_pin_with_default_pin_raises_ValueError(self):
+        try:
+            is_valid_pin(DEFAULT_PIN)
+        except ValueError as e:
+            self.assertEqual(type(e), ValueError)
+            self.assertEqual('You cannot use the default PIN.', str(e))
+        else:
+            self.fail('ValueError not raised.')
+
+    def test_is_valid_pin_with_short_pin_raises_ValueError(self):
+        try:
+            is_valid_pin('12345')
+        except ValueError as e:
+            self.assertEqual(type(e), ValueError)
+            self.assertEqual('The PIN must be 6 digits long.', str(e))
+        else:
+            self.fail('ValueError not raised.')
+
+    def test_is_valid_pin_with_long_pin_raises_ValueError(self):
+        try:
+            is_valid_pin('1234567')
+        except ValueError as e:
+            self.assertEqual(type(e), ValueError)
+            self.assertEqual('The PIN must be 6 digits long.', str(e))
+        else:
+            self.fail('ValueError not raised.')
+
+    def test_is_valid_pin_with_invalid_string_raises_ValueError(self):
+        try:
+            is_valid_pin('secret')
+        except ValueError as e:
+            self.assertEqual(type(e), ValueError)
+            self.assertEqual('The PIN must be 6 digits long.', str(e))
+        else:
+            self.fail('ValueError not raised.')
+
 
 
 if __name__ == '__main__':

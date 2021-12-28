@@ -6,3 +6,7 @@ class Error(Exception):
 
 class IncompleteBookError(Error):
     pass
+
+
+class NotValidISBNError(Error):
+    pass
