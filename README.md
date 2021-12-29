@@ -37,15 +37,15 @@ The application integrates with the [Finance microservice](https://github.com/tv
 
 ### 3. Student
 The application integrates with the [Student microservice](https://github.com/tvergilio/student) via REST.
-1. When a student is created via the Student microservice, a request is sent to this application to create an account for that student ID.
-2. The default library pin for all new accounts is 000000 (see API above).
+1. When a student is created via the Student microservice, a request is sent to this application to create an account for the student.
+2. The default library pin for all new accounts is '000000' (see API above).
 
 
 ## Run using Docker Compose
 1. Ensure the Finance and Student microservices are running, or the integrations will not work. **Finance must be started first.**<br/>
 2. Rename the `.env.example` file inside the application root directory to `.env`:<br/>
 3. Edit any credentials in the `.env` file as needed (do not rename the DB_NAME).<br/>
-4. From the application root directory, run the libraryapp and librarydb services:<br/><br/>
+4. From the application root directory, run the libraryapp and librarydb services:<br/>
    `docker-compose up`
 
 ## Contributing
