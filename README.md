@@ -30,15 +30,16 @@ The application integrates with a MySQL relational database.<br/>
 The connection string is set in the application.py file.<br/>
 Scripts to create the database schema can be found in the migrations folder.
 
-### 2. Student
-The application integrates with the [Student microservice](https://github.com/tvergilio/student) via REST.
-1. When a student is created via the Student microservice, a request is sent to this application to create an account for that student ID.
-2. The default library pin for all new accounts is 000000 (see API above). 
-
-### 3. Finance
+### 2. Finance
 The application integrates with the [Finance microservice](https://github.com/tvergilio/finance) via REST.
 1. When a book is returned late, a fine is issued. A request is sent to the Finance microservice to create an invoice. 
 2. The invoice must be paid via the Payment Portal.
+
+### 3. Student
+The application integrates with the [Student microservice](https://github.com/tvergilio/student) via REST.
+1. When a student is created via the Student microservice, a request is sent to this application to create an account for that student ID.
+2. The default library pin for all new accounts is 000000 (see API above).
+
 
 ## Run using Docker Compose
 1. Ensure the Finance and Student microservices are running, or the integrations will not work. **Finance must be started first.**<br/>
