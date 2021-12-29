@@ -13,14 +13,4 @@
         </div>
         <button class="btn btn-primary" name="submit" type="submit" value="borrow">Borrow</button>
     </form>
-
-<script type="text/javascript">
-    function EnableDisable(isbn) {
-        //Reference the Button.
-        const btnSubmit = document.getElementById("submit");
-        //Verify the ISBN has 13 characters
-        btnSubmit.disabled = isbn.value.trim().length !== 13
-    }
-</script>
-
 {% endblock %}
