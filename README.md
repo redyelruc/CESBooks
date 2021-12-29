@@ -8,7 +8,7 @@ The application is written in Python using the Flask framework.
 2. Books - display all books in the library.
 3. Borrow - borrow a book using barcode scanner.
 4. Return - return a book using thebarcode scanner.
-5. Account- display the user's borrowng history.
+5. Account - display the user's borrowng history.
 
 ## Admin Features
 1. Add Title - add new books to the database using the barcode scanner.
@@ -22,13 +22,18 @@ The application is written in Python using the Flask framework.
 2. The connection string is set in the application.py file.
 3. Scripts to create the database schema can be found in the migrations folder.
 
+## API
+A REST API is exposed which allows other applications to create a new library account.
+POST requests should be sent to /api/register, containing a JSON body { "studentId": "cXXXXXXX" } where cXXXXXXX is the student id. 
+This results in a new library account with the default PIN '000000'.
+Upon logging in for the first time, the new student will be asked to update this PIN.
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 Please make sure to update tests as appropriate.
 
 ## License
-Copyright (c) 2020 Aidan Curley
+Copyright (c) 2020/21 A. Curley
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
