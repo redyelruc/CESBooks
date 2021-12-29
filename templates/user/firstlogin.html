@@ -1,11 +1,11 @@
 {% extends "user/layout.html" %}
 
 {% block title %}
-    New Password
+    Update PIN
 {% endblock %}
 
 {% block main %}
-    <p>Please enter a new password</p><br>
+    <p>Please enter a new PIN</p><br>
     <form action="/firstlogin" method="post">
         <div class="form-group">
             <input id='pass' class="form-control" name="student_id" value={{ student_id }} type="text" readonly>
