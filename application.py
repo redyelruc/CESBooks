@@ -2,7 +2,7 @@ import os
 from datetime import timedelta
 
 from cs50 import SQL
-from flask import Flask, flash, request
+from flask import Flask, flash, request, jsonify
 from flask_session import Session
 from tempfile import mkdtemp
 
@@ -56,11 +56,11 @@ def register():
     student_id = request.json['studentId']
     # check student_id is not already registered
     if db.execute("SELECT * FROM student WHERE id = %s", student_id):
-        return student_id, 204
+        return {'studentId': student_id}
 
     db.execute("INSERT INTO student(id, hash) VALUES (%s, %s)",
                student_id, generate_password_hash(constants.DEFAULT_PIN))
-    return student_id, 201
+    return {'studentId': student_id}
 
 
 @app.route("/login", methods=["GET", "POST"])
