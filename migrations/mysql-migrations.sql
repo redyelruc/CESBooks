@@ -1,5 +1,5 @@
-#CREATE {DATABASE | SCHEMA} [IF NOT EXISTS] finance;
-USE finance;
+CREATE DATABASE IF NOT EXISTS library;
+USE library;
 # ----
 # -- Drop table for student
 # ----
