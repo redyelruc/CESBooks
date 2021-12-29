@@ -1,17 +1,18 @@
 {% extends "user/layout.html" %}
 
 {% block title %}
-    My History
+    {{ title}}
 {% endblock %}
 
 {% block main %}
+    {{ title}}
     <table class="table">
       <thead class="thead-light">
         <tr>
-          <th scope="col">Date Borrowed</th>
-          <th scope="col">Date Returned</th>          
-          <th scope="col">Book</th>
-          <th scope="col">Overdue</th>
+            <th scope="col">Book</th>
+            <th scope="col">Date Borrowed</th>
+            <th scope="col">Date Returned</th>
+            <th scope="col">Overdue</th>
         </tr>
       </thead>
       <tbody>

@@ -1,26 +1,26 @@
 import os
-from datetime import timedelta
-
-from cs50 import SQL
-from flask import Flask, flash, request, jsonify
-from flask_session import Session
-from tempfile import mkdtemp
-
-from classes.book import Book
-from classes.transaction import Transaction
-from classes.fine import Fine
-from constants import constants
-from constants import messages
-from errors.errors import IncompleteBookError, NotValidISBNError
-
-from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
-from werkzeug.security import check_password_hash, generate_password_hash
-from helpers import *
-
 import isbnlib
 import requests
 
-# Configure application
+from datetime import timedelta
+
+from cs50 import SQL
+from flask import Flask, flash, request
+from flask_session import Session
+from tempfile import mkdtemp
+
+from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
+from werkzeug.security import check_password_hash, generate_password_hash
+
+# Local imports
+from classes.book import Book
+from classes.transaction import Transaction
+from classes.fine import Fine
+
+from constants import constants, messages
+from errors.errors import IncompleteBookError, NotValidISBNError
+
+from helpers import *
 
 
 app = Flask(__name__)
@@ -146,7 +146,7 @@ def books():
         booklist.append([row['isbn'], row['title'], row['author'], row['year'], row['copies']])
 
     if request.method == "GET":
-        return render_template("user/books.html", books=booklist)
+        return render_template("user/books.html", books=booklist, title='All Titles')
 
 
 @app.route("/history")
@@ -160,11 +160,13 @@ def transactions():
     for row in rows:
         if row['date_returned']:
             row['date_returned'] = row['date_returned'].strftime(constants.DATE_DISPLAY_FORMAT)
-        transaction_history.append([row['date_borrowed'].strftime(constants.DATE_DISPLAY_FORMAT), row['date_returned'],
-                                    row['book_isbn'],
+
+        transaction_history.append([row['book_isbn'],
+                                    row['date_borrowed'].strftime(constants.DATE_DISPLAY_FORMAT),
+                                    row['date_returned'],
                                     calculate_days_overdue(row['date_borrowed'], row['date_returned'])])
 
-    return render_template("user/transactions.html", transactions=transaction_history)
+    return render_template("user/transactions.html", transactions=transaction_history, title='My Account')
 
 
 @app.route("/borrow", methods=["GET", "POST"])
