@@ -9,7 +9,7 @@ The application is written in Python using the Flask framework.
 2. Books - display all books in the library.
 3. Borrow - borrow a book using barcode scanner.
 4. Return - return a book using thebarcode scanner.
-5. Account- display the user's borrowng history.
+5. Account - display the user's borrowng history.
 
 ## Library Admin Features
 1. Add Title - add new books to the database using the barcode scanner.
@@ -17,6 +17,12 @@ The application is written in Python using the Flask framework.
 3. Students - dispay all students, and the number of books each has on loan/overdue.
 4. Current Loans - display all books currently on loan.
 5. Overdue - display all books that are overdue.
+
+## API
+A REST API is exposed which allows other applications to create a new library account.
+POST requests should be sent to /api/register, containing a JSON body { "studentId": "cXXXXXXX" } where cXXXXXXX is the student id.
+This results in a new library account with the default PIN '000000'.
+Upon logging in for the first time, the new student will be asked to update this PIN.
 
 ## Integrations
 ### 1. Database
@@ -27,7 +33,7 @@ Scripts to create the database schema can be found in the migrations folder.
 ### 2. Student
 The application integrates with the [Student microservice](https://github.com/AidanCurley/CESBooks) via REST.
 1. When a student is created via the Student microservice, a request is sent to this application to create an account for that student ID.
-2. The default library pin for all new accounts is 000000. This must be changed upon logging in for the first time.
+2. The default library pin for all new accounts is 000000 (see [API](#API) above). 
 
 ### 3. Finance
 The application integrates with the [Finance microservice](https://github.com/tvergilio/finance) via REST.
@@ -46,7 +52,7 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 Please make sure to update tests as appropriate.
 
 ## License
-Copyright (c) 2020 Aidan Curley
+Copyright (c) 2020/21 A. Curley
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

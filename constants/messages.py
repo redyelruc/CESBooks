@@ -9,6 +9,8 @@ BOOK_RETURNED_SUCCESS = 'Thanks for your return.'
 
 FINE_ISSUED = 'You have been fined'
 
+NO_COPIES_AVAILABLE = 'Sorry, There are no copies available.'
+NOT_BORROWED = 'This is not one of the books you have borrowed.'
 PIN_CONFIRMATION_ERROR = 'Your pin and confirmation do not match. Please try again.'
 PIN_UPDATE_SUCCESS = 'You have successfully updated your pin. Thank you.'
 
