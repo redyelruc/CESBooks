@@ -31,7 +31,7 @@ The connection string is set in the application.py file.<br/>
 Scripts to create the database schema can be found in the migrations folder.
 
 ### 2. Student
-The application integrates with the [Student microservice](https://github.com/AidanCurley/CESBooks) via REST.
+The application integrates with the [Student microservice](https://github.com/tvergilio/student) via REST.
 1. When a student is created via the Student microservice, a request is sent to this application to create an account for that student ID.
 2. The default library pin for all new accounts is 000000 (see API above). 
 
