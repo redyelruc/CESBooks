@@ -16,11 +16,8 @@
 ## Using Docker
 
 ### Build image locally
-`docker build --tag ces-books:4.0 .`
+`docker build --tag ces-books .`
 (change the version)
-
-### Run container locally
-`docker run --publish 80:80 -e DATABASE='mysql://<your_username>:<your_mysql_password>@<your_mysql_hostname>/<your_database_name>' ces-books:4.0`
 
 ### Publish to Docker Hub
 1. Log in
@@ -30,11 +27,13 @@
 `docker images`
 
 3. Tag Image
-`docker tag XXXXXXXXXX redyelruc/ces-books:4.0`
-(replace XXXXXXXX with the correct image number from the command above)
+`docker tag ces-books redyelruc/ces-books:4.0`
 
 4. Push to Docker Hub
-`docker push redyelruc/ces-books`
+`docker push redyelruc/ces-books:4.0`
+
+### Run container locally
+`docker run --publish 80:80 -e DATABASE='mysql://<your_username>:<your_mysql_password>@<your_mysql_hostname>/<your_database_name>' ces-books:4.0`
 
 ### Run container from image stored in Docker Hub
 `docker run --publish 80:80 -e DATABASE='mysql://<your_username>:<your_mysql_password>@<your_mysql_hostname>/<your_database_name>' redyelruc/ces-books:4.0`
