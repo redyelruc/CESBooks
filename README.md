@@ -40,6 +40,8 @@ The application integrates with the [Student microservice](https://github.com/tv
 1. When a student is created via the Student microservice, a request is sent to this application to create an account for the student.
 2. The default library pin for all new accounts is '000000' (see API above).
 
+## Demos
+[![Watch the demo.](http://img.youtube.com/vi/6Z2XXVkB3gk/hqdefault.jpg)](https://youtu.be/6Z2XXVkB3gk)
 
 ## Run using Docker Compose
 1. Ensure the Finance and Student microservices are running, or the integrations will not work. **Finance must be started first.**<br/>
