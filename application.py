@@ -46,7 +46,7 @@ app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
 
 # Configure CS50 Library to use SQL database
-# db = SQL("mysql://redyelruc:financered180974finance@127.0.0.1:3306/finance")
+# db = SQL("mysql://redyelruc:financered180974finance@127.0.0.1:3309/finance")
 db = SQL(os.environ['DATABASE'])
 
 

@@ -6,23 +6,22 @@
 
 {% block main %}
     {{ title }}
-    <table class="table">
-      <thead class="thead-light">
-        <tr>
-          <th class=normal-width scope="col">Student</th>
-          <th class=wide-width scope="col">On Loan</th>
-          <th class=normal-width scope="col">Overdue</th>
-        </tr>
-      </thead>
-      <tbody>
-    {% for row in students %}
-      <tr>
-        <td>{{ row[0] }}</td>
-        <td>{{ row[1] }}</td>
-        <td>{{ row[2] }}</td>
-      </tr>
-    {% endfor %}
-      </tbody>
+    <table class="table" data-toggle="table">
+        <thead class="thead-light">
+            <tr>
+                <th class=normal-width data-sortable="true" scope="col">Student</th>
+                <th class=wide-width data-sortable="true" scope="col">On Loan</th>
+                <th class=normal-width data-sortable="true" scope="col">Overdue</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in students %}
+                <tr>
+                    <td>{{ student[0] }}</td>
+                    <td>{{ student[1] }}</td>
+                    <td>{{ student[2] }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
     </table>
-
 {% endblock %}
