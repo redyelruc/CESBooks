@@ -1,287 +1,391 @@
 import os
-from datetime import datetime
+import isbnlib
+import requests
+
+from datetime import timedelta
 
 from cs50 import SQL
-from flask import Flask, flash, jsonify, redirect, render_template, request, session
+from flask import Flask, flash, request
 from flask_session import Session
 from tempfile import mkdtemp
+
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
-from helpers import apology, login_required
-import isbnlib
+
+# Local imports
+from classes.book import Book
+from classes.transaction import Transaction
+from classes.fine import Fine
+
+from constants import constants, messages
+from errors.errors import IncompleteBookError, NotValidISBNError
+
+from helpers import *
 
 
-# Configure application
 app = Flask(__name__)
 
 # Ensure templates are auto-reloaded
-app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+
 
 # Ensure responses aren't cached
 @app.after_request
 def after_request(response):
-    db.execute("COMMIT;")
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Expires"] = 0
-    response.headers["Pragma"] = "no-cache"
+    db.execute('COMMIT;')
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Expires'] = 0
+    response.headers['Pragma'] = 'no-cache'
     return response
 
 
 # Configure session to use filesystem (instead of signed cookies)
-app.config["SESSION_FILE_DIR"] = mkdtemp()
-app.config["SESSION_PERMANENT"] = False
-app.config["SESSION_TYPE"] = "filesystem"
+app.config['SESSION_FILE_DIR'] = mkdtemp()
+app.config['SESSION_PERMANENT'] = False
+app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
 
-# Configure CS50 Library to use SQLite database
-#'mysql://<your_username>:<your_mysql_password>@<your_mysql_hostname>/<your_database_name>'
+# Configure CS50 Library to use SQL database
+# db = SQL("mysql://redyelruc:financered180974finance@127.0.0.1:3309/finance")
 db = SQL(os.environ['DATABASE'])
 
-@app.route("/")
-@login_required
-def index():
-    """Show all books"""
 
-    rows = db.execute("SELECT * FROM books WHERE stock_new > 0 OR stock_used > 0 ORDER BY level, title")
-    bookstock =[]
-    for row in rows:
-        bookstock.append([row['title'], row['level'], row['edition'], row['isbn'], row['stock_new'], row['stock_used']])
-    return render_template("index.html", bookstock=bookstock)
+@app.route('/api/register', methods=['POST'])
+def register():
+    """Register a new student"""
+    student_id = request.json['studentId']
+    # check student_id is not already registered
+    if db.execute('SELECT * FROM student WHERE id = %s', student_id):
+        return {'studentId': student_id}
 
-
-@app.route("/transactions")
-@login_required
-def transactions():
-    """Show history of transactions"""
-    # get transaction history
-    rows = db.execute("SELECT * FROM transactions WHERE DATE(date) = CURDATE() ORDER BY date DESC")
-    history =[]
-    for row in rows:
-        history.append([row['date'], row['transaction_type'], row['book_id'],
-                        row['price'], row['student'],row['user_id']])
-
-    # redirect user to index page
-    return render_template("transactions.html", transactions=history)
+    db.execute('INSERT INTO student(id, hash) VALUES (%s, %s)',
+               student_id, generate_password_hash(constants.DEFAULT_PIN))
+    return {'studentId': student_id}
 
 
-
-@app.route("/login", methods=["GET", "POST"])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     """Log user in"""
-
     # Forget any user_id
     session.clear()
 
-    # User reached route via POST (as by submitting a form via POST)
-    if request.method == "POST":
+    if request.method == 'POST':
 
-        # Ensure username was submitted
-        if not request.form.get("username"):
-            return apology("must provide username", 403)
+        student_id = request.form.get('student_id')
+        pin = request.form.get('pin')
+        if not student_id or not pin:
+            return apology('incomplete details', 403)
 
-        # Ensure password was submitted
-        elif not request.form.get("password"):
-            return apology("must provide password", 403)
+        # Ensure student_id exists and password is correct
+        rows = db.execute('SELECT * FROM student WHERE id = %s', student_id)
+        if len(rows) != 1 or not check_password_hash(rows[0]['hash'], pin):
+            return apology('invalid details', 403)
 
-        # Query database for username
-        rows = db.execute("SELECT * FROM users WHERE username = :username",
-                          username=request.form.get("username"))
+        # If this is first time the student has logged in, force them to change the pin
+        if pin == constants.DEFAULT_PIN:
+            session['new_user'] = student_id
+            return redirect('/firstlogin')
 
-        # Ensure username exists and password is correct
-        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
-            return apology("invalid username and/or password", 403)
+        if student_id == 'admin':
+            session['admin'] = True
+            return redirect('/admin/books')
 
-        # Remember which user has logged in
-        session["user_id"] = rows[0]["id"]
+        session['user_id'] = student_id
+        return redirect('/')
 
-        # Redirect user to home page
-        return redirect("/")
-
-    # User reached route via GET (as by clicking a link or via redirect)
     else:
-        return render_template("login.html")
+        return render_template('user/login.html')
 
 
-@app.route("/register", methods=["GET", "POST"])
-def register():
-    """Register user"""
-    if request.method == "GET":
-        # Display form for user to create account
-        return render_template("register.html")
+@app.route('/firstlogin', methods=['GET', 'POST'])
+def firstlogin():
+    """Update Password"""
+    if request.method == 'GET':
+        return render_template('user/firstlogin.html', student_id=session['new_user'])
     else:
-        # register the new user
-        # check username is not blank
-        if not request.form.get("username"):
-            return apology("must provide username", 403)
-        # check password id not blank
-        if not request.form.get("password"):
-            return apology('must provide password', 403)
-        # check username is unique
-        if db.execute("SELECT * FROM users WHERE username = :username", username=request.form.get("username")):
-            return apology("username already taken", 403)
-        # check password and confirmation are same
-        if request.form.get("password") != request.form.get("confirm-password"):
-            return apology("password and confirmation do not match", 403)
-        # hash the password and create row in db
-        db.execute("INSERT INTO users(username, hash) VALUES (:username, :hash)", username=request.form.get("username"),
-                   hash=generate_password_hash(request.form.get("password")))
+        pin = request.form.get('pin')
+        pin_confirmation = request.form.get('confirm-pin')
 
-        # make sure that the new user is logged in
-        rows = db.execute("SELECT * FROM users WHERE username = :username", username=request.form.get("username"))
-        # set the session so we know who is logged in
-        session["user_id"] = rows[0]["id"]
-        return redirect("/")
+        try:
+            is_valid_pin(pin)
+        except ValueError as e:
+            flash(str(e), 'alert-danger')
+            return redirect('/firstlogin')
+
+        if pin != pin_confirmation:
+            flash(messages.PIN_CONFIRMATION_ERROR, 'alert-danger')
+            return redirect('/firstlogin')
+        else:
+            # save new pin to the db and log the student in
+            session['new_user'] = None
+            session['user_id'] = request.form.get('student_id')
+            db.execute('UPDATE student SET hash = %s WHERE id = %s', generate_password_hash(pin), session['user_id'])
+            flash(messages.PIN_UPDATE_SUCCESS, 'alert-success')
+            return redirect('/')
 
 
-@app.route("/logout")
+@app.route('/logout')
 def logout():
     """Log user out"""
 
     # Forget any user_id
     session.clear()
 
-    # Redirect user to login form
-    return redirect("/")
+    return redirect('/')
 
 
-@app.route("/sell", methods=["GET", "POST"])
+@app.route('/', methods=['GET'])
 @login_required
-def sell():
-    """Sell a book"""
-    rows = db.execute("SELECT * FROM books WHERE stock_new > 0 OR stock_used > 0 ORDER BY level")
-    bookstock =[]
-    transaction = "SELL"
+def books():
+    """List all books"""
+    rows = db.execute("SELECT * FROM book ORDER BY title")
+    booklist = []
+
     for row in rows:
-        bookstock.append([row['title'], row['level'], row['edition'], row['isbn'], row['stock_new'], row['stock_used'], row['price_new'], row['price_used']])
-    if request.method == "GET":
-        return render_template("sell.html", stocks=bookstock)
-    else:
-        isbn = request.form.get("isbn")
-        used = request.form.get("used")
-        number_to_sell = int(request.form.get("number_to_sell"))
-        student = request.form.get("student")
-        # check database to make sure book is in stock
-        if used:
-            book_in_stock = db.execute("SELECT stock_used, price_used from books WHERE isbn = :isbn", isbn = isbn)
-        else:
-            book_in_stock = db.execute("SELECT stock_new, price_new from books WHERE isbn = :isbn", isbn = isbn)
+        booklist.append([row['isbn'],
+                         row['title'],
+                         row['author'],
+                         row['year'],
+                         row['copies']])
 
-        if not book_in_stock:
-            return apology('sorry, out of stock')
-        elif used:
-            db.execute("UPDATE books SET stock_used = :books_left WHERE isbn = :isbn", isbn = isbn,
-                    books_left = int(book_in_stock[0]["stock_used"]) - 1)
-            db.execute("INSERT INTO transactions(transaction_type, user_id, book_id, price, date, student) VALUES (:trans, :user, :book, :price, :date, :student)",
-                        trans=transaction, user=session["user_id"], book=isbn, price=(book_in_stock[0]["price_used"]), date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'), student=student)
-        else:
-            db.execute("UPDATE books SET stock_new = :books_left WHERE isbn = :isbn", isbn = isbn,
-                    books_left = int(book_in_stock[0]["stock_new"]) - 1)
-            db.execute("INSERT INTO transactions(transaction_type, user_id, book_id, price, date, student) VALUES (:trans, :user, :book, :price, :date, :student)",
-                    trans=transaction, user=session["user_id"], book=isbn, price=(book_in_stock[0]["price_new"]), date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'), student=student)
-        flash("Sold!")
-        return redirect("/")
+    if request.method == 'GET':
+        return render_template('user/books.html', books=booklist, title='All Titles')
 
 
-@app.route("/buy", methods=["GET", "POST"])
+@app.route('/history')
 @login_required
-def buy():
-    """Buy a book"""
-    if request.method == "GET":
-        return render_template("buy.html")
+def transactions():
+    """Show history of student's loans and returns"""
+    rows = db.execute(
+        'SELECT * FROM transaction WHERE student_id = %s ORDER BY date_returned ASC, date_borrowed DESC LIMIT 8',
+        session['user_id'])
+    transaction_history = []
+    for row in rows:
+        if row['date_returned']:
+            row['date_returned'] = row['date_returned'].strftime(constants.DATE_DISPLAY_FORMAT)
+
+        transaction_history.append([row['book_isbn'],
+                                    row['date_borrowed'].strftime(constants.DATE_DISPLAY_FORMAT),
+                                    row['date_returned'],
+                                    calculate_days_overdue(row['date_borrowed'], row['date_returned'])])
+
+    return render_template('user/transactions.html', transactions=transaction_history, title='My Account')
+
+
+@app.route('/borrow', methods=['GET', 'POST'])
+@login_required
+def borrow():
+    """Borrow a book"""
+    if request.method == 'GET':
+        return render_template('user/borrow.html', books=books)
     else:
-        isbn = request.form.get("isbn")
-        student = request.form.get("student")
-        used = request.form.get("used")
-        transaction = "BUY"
-        # get current stock level
-        book_in_stock = db.execute("SELECT * from books WHERE isbn = :isbn", isbn = isbn)
+        isbn = request.form.get('isbn')
+        today = date.today().strftime(constants.DATE_DB_FORMAT)
+        book = select_book(isbn)
+
+        if not book:
+            flash(messages.BOOK_NOT_FOUND_ERROR, 'alert-danger')
+            return redirect('/')
+
+        if book.copies == 0:
+            flash(messages.NO_COPIES_AVAILABLE, 'alert-danger')
+            return redirect('/')
+        else:
+            db.execute("UPDATE book SET copies = copies -1 WHERE isbn = %s", isbn)
+            db.execute("INSERT INTO transaction (student_id,book_isbn,date_borrowed, date_returned) "
+                       "VALUES (%s, %s, %s, %s)", session["user_id"], isbn, today, constants.NO_DATE)
+            message = f"You have borrowed '{book.title}' until " \
+                      f"{(date.today() + timedelta(days=14)).strftime(constants.DATE_DISPLAY_FORMAT)}."
+
+        flash(message, 'alert-success')
+        return redirect('/history')
+
+
+@app.route('/return_books', methods=['GET', 'POST'])
+@login_required
+def return_books():
+    """Return a book"""
+    if request.method == 'GET':
+        return render_template('user/return.html')
+    else:
+        today = date.today().strftime(constants.DATE_DB_FORMAT)
+        book = select_book(request.form.get('isbn'))
+
+        if not book:
+            flash(messages.BOOK_NOT_FOUND_ERROR, 'alert-danger')
+            return redirect('/')
+
+        # RETURN A BOOK
         try:
-            # add one to stock level and write to database
-            db.execute("UPDATE books SET stock_used = :books WHERE isbn = :isbn", isbn = isbn, books = book_in_stock[0]["stock_used"] + 1)        
-            # record in transactions database
-            db.execute("INSERT INTO transactions(transaction_type, user_id, book_id, price, date, student) VALUES (:trans, :user, :book, :price, :date, :student)",
-                            trans=transaction, user=session["user_id"], book=isbn, price= -10, date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'), student=student)
-            flash("Bought!")
-            return redirect("/")
-        except IndexError:
-            flash("Not in database. Please add details of new book.")
-            return render_template("add.html")
+            records = db.execute(
+                "SELECT * FROM transaction WHERE book_isbn = %s AND student_id = %s AND date_returned = %s",
+                book.isbn, session['user_id'], constants.NO_DATE)
+
+            if len(records) < 1:
+                flash(messages.NOT_BORROWED, 'alert-danger')
+                return redirect('/history')
+
+            transaction = Transaction(records[0])
+
+            db.execute("UPDATE transaction SET date_returned = %s WHERE id = %s", today, transaction.id)
+            db.execute("UPDATE book SET copies = copies + 1 WHERE isbn = %s", book.isbn)
+            message = messages.BOOK_RETURNED_SUCCESS
+
+        except Exception as e:
+            flash(str(e), 'alert-danger')
+
+        # Isolate and identify api connection issues if they exist
+        try:
+            # check, and issue fine if needed
+            if days_before(transaction.date_borrowed, date.today()) > constants.MAX_BORROWING_DURATION:
+                fine = Fine(transaction.date_borrowed, session['user_id'])
+
+                # Call out to API
+                r = requests.post(constants.INVOICES_URL, json=fine.details)
+                message += f"{messages.FINE_ISSUED} £{'{:.2f}'.format(fine.amount)}. " \
+                           f"{messages.VISIT_PAYMENT_PORTAL} {r.json()['reference']}."
+        except requests.exceptions.ConnectionError:
+            flash(f'{messages.BOOK_RETURNED_SUCCESS} {messages.API_CONNECTION_ERROR}', 'alert-danger')
+            return redirect('/history')
+
+        flash(message, 'alert-success')
+
+    return redirect('/history')
 
 
+@app.route('/admin/books', methods=['GET'])
+@admin_required
+def admin_books():
+    """List all books"""
+    rows = db.execute('SELECT * FROM book ORDER BY title')
+    booklist = []
+    cols = [('ISBN', 'normal-width'),
+            ('Title', 'wide-width'),
+            ('Author', 'normal-width'),
+            ('Year', 'narrow-width'),
+            ('Copies', 'narrow-width')]
 
-@app.route("/swap", methods=["GET", "POST"])
-@login_required
-def swap():
-    if request.method == "GET":
-        # Display form for user to enter stock to search
-        return render_template("swap.html")
-    else:
-        book_in = request.form.get("book_in")
-        book_in_used = request.form.get("book_in_used")
-        book_out = request.form.get("book_out")
-        book_out_used = request.form.get("book_out_used")
-        student = request.form.get("student")
-        # update table by adding book coming in
-        if book_in_used:
-            stock_used = db.execute("SELECT stock_used from books WHERE isbn = :isbn", isbn = book_in)[0]['stock_used']
-            db.execute("UPDATE books SET stock_used = :number WHERE isbn = :isbn", number = stock_used + 1, isbn = book_in)
-        else:    
-            stock_new = db.execute("SELECT stock_new from books WHERE isbn = :isbn", isbn = book_in)[0]['stock_new']
-            db.execute("UPDATE books SET stock_new = :number WHERE isbn = :isbn", number = stock_new + 1, isbn = book_in)
+    for row in rows:
+        booklist.append([row['isbn'],
+                         row['title'],
+                         row['author'],
+                         row['year'],
+                         row['copies']])
 
-        # update table by subtracting book going out
-        if book_out_used:
-            stock_used = db.execute("SELECT stock_used from books WHERE isbn = :isbn", isbn = book_out)[0]['stock_used']
-            db.execute("UPDATE books SET stock_used = :number WHERE isbn = :isbn", number = stock_used -1, isbn = book_out)
-        else:    
-            stock_new = db.execute("SELECT stock_new from books WHERE isbn = :isbn", isbn = book_out)[0]['stock_new']
-            db.execute("UPDATE books SET stock_new = :number WHERE isbn = :isbn", number = stock_new - 1, isbn = book_out)
-        
-        #update the transactions table
-        db.execute("INSERT INTO transactions(transaction_type, user_id, book_id, price, date, student) VALUES (:trans, :user, :book, :price, :date, :student)",
-                    trans="SWAP IN", user=session["user_id"], book=book_in, price=0, date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'), student=student)
-        db.execute("INSERT INTO transactions(transaction_type, user_id, book_id, price, date, student) VALUES (:trans, :user, :book, :price, :date, :student)",
-                    trans="SWAP OUT", user=session["user_id"], book=book_out, price=0, date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'), student=student)
-        flash('Swap completed')
-        return redirect('/')
+    return render_template('admin/admin_books.html', title='All Titles', cols=cols, books=booklist)
 
 
-@app.route("/add", methods=["GET", "POST"])
-@login_required
+@app.route('/admin/students', methods=["GET"])
+@admin_required
+def admin_students():
+    """List all students, number of current loans and overdue books"""
+    students = db.execute("SELECT id FROM student WHERE id != 'admin' ORDER BY id")
+    student_list = []
+
+    for student in students:
+        current_loans = db.execute('SELECT count(*) FROM transaction WHERE student_id = %s AND date_returned = %s',
+                                   student['id'], constants.NO_DATE)
+        borrowed = (date.today() - timedelta(days=constants.MAX_BORROWING_DURATION))
+        overdue = db.execute('SELECT count(*) FROM transaction WHERE student_id = %s AND '
+                             'date_borrowed < %s AND date_returned = %s', student['id'], borrowed, constants.NO_DATE)
+
+        student_list.append([student['id'],
+                             current_loans[0]['count(*)'],
+                             overdue[0]['count(*)']])
+
+    return render_template('admin/admin_students.html', title='All Students', students=student_list)
+
+
+@app.route('/admin/loans', methods=['GET'])
+@admin_required
+def admin_loans():
+    """List all titles currently out on loan"""
+    loans = db.execute('SELECT book_isbn, book.title, student_id, date_borrowed FROM transaction JOIN '
+                       'book ON transaction.book_isbn = book.isbn WHERE date_returned = %s', constants.NO_DATE)
+
+    cols = [('ISBN', 'normal-width'),
+            ('Title', 'wide-width'),
+            ('Student', 'normal-width'),
+            ('Borrowed', 'normal-width')]
+
+    loan_list = []
+    for book in loans:
+        loan_list.append([book['book_isbn'], book['title'], book['student_id'],
+                          book['date_borrowed'].strftime(constants.DATE_DISPLAY_FORMAT)])
+
+    return render_template('admin/admin_books.html', title='Current Loans', cols=cols, books=loan_list)
+
+
+@app.route('/admin/overdue', methods=['GET'])
+@admin_required
+def admin_overdue():
+    """List all titles currently overdue"""
+    borrowed = (date.today() - timedelta(days=constants.MAX_BORROWING_DURATION))
+    overdue = db.execute('SELECT book_isbn, book.title, student_id, date_borrowed FROM transaction JOIN '
+                         'book ON transaction.book_isbn = book.isbn WHERE date_borrowed < %s AND date_returned = %s',
+                         borrowed, constants.NO_DATE)
+
+    cols = [('ISBN', 'normal-width'),
+            ('Title', 'wide-width'),
+            ('Student', 'normal-width'),
+            ('Borrowed', 'normal-width')]
+
+    overdue_list = []
+    for book in overdue:
+        overdue_list.append([book['book_isbn'],
+                             book['title'],
+                             book['student_id'],
+                             book['date_borrowed'].strftime(constants.DATE_DISPLAY_FORMAT)])
+
+    return render_template('admin/admin_books.html', title='Overdue Books', cols=cols, books=overdue_list)
+
+
+@app.route('/admin/add', methods=['GET', 'POST'])
+@admin_required
 def add():
-    """Get stock quote."""
-    if request.method == "GET":
-        # Display form for user to enter stock to search
-        return render_template("add.html")
+    """Add a new title to the library by ISBN."""
+    if request.method == 'GET':
+        return render_template('admin/add.html')
     else:
-        isbn = request.form.get("isbn")
-        book_details = isbnlib.meta(isbn)
-        cover = isbnlib.cover(isbn)
-        book_details['cover']=cover['thumbnail']
-        if "ISBN-13" in book_details:
-            book_details['ISBN'] = book_details.pop("ISBN-13")
-        return render_template("addstock.html", **book_details)
+        isbn = request.form.get('isbn')
+        try:
+            is_valid_isbn(isbn)
+            # Use isbnlib to look up the isbn and get all relevant details
+            details = isbnlib.meta(isbn)
+            cover = isbnlib.cover(isbn)
 
-@app.route("/addstock", methods=["GET", "POST"])
-@login_required
+            book_details = {'isbn': details['ISBN-13'],
+                            'title': details['Title'],
+                            'author': details['Authors'][0],
+                            'year': details['Year'],
+                            'cover': cover['thumbnail'],
+                            'copies': 1}
+            return render_template('admin/addstock.html', **book_details)
+
+        except (ValueError, isbnlib._exceptions.NotValidISBNError) as e:
+            flash(e, 'alert-danger')
+            return redirect('/admin/add')
+
+
+@app.route('/admin/addstock', methods=['POST'])
+@admin_required
 def addstock():
-    """Get stock quote."""
-    if request.method == "GET":
-        # Display form for user to enter stock to search
-        return render_template("add.html", book)
-    else:
-        isbn = request.form.get("isbn")
-        title = request.form.get("title")
-        level = request.form.get("level")
-        edition = request.form.get("edition")
-        price_new = float(request.form.get("price_new"))
-        price_used = float(request.form.get("price_used"))
-        stock_new = request.form.get("stock_new")
-        stock_used = request.form.get("stock_used")
-        db.execute("INSERT INTO books(isbn, title, level, edition, stock_new, stock_used, price_new, price_used) VALUES(:isbn, :title, :level, :edition, :stock_new, :stock_used, :price_new, :price_used)",
-                    isbn = isbn, title=title, level=level, edition=edition, stock_new=stock_new, stock_used=stock_used, price_new=price_new, price_used = price_used)
-        flash("Title added")
-        return redirect("/")
+    """Check/complete new title's details before adding to the library db"""
+    try:
+        book = Book(request.form.get('isbn'),
+                    request.form.get('title'),
+                    request.form.get('author'),
+                    request.form.get('year'),
+                    request.form.get('copies'))
+        db.execute('INSERT INTO book(isbn, title, author, year, copies) VALUES(%s, %s, %s, %s, %s)',
+                   book.isbn, book.title, book.author, book.year, book.copies)
+
+        flash(f'{book.title}{messages.BOOK_ADDED_SUCCESS}', 'alert-success')
+        return redirect('/admin/books')
+
+    except (IncompleteBookError, NotValidISBNError, ValueError) as e:
+        flash(f'{e}{messages.BOOK_NOT_ADDED_ERROR}', 'alert-danger')
+        return redirect('/admin/add')
 
 
 def errorhandler(e):
@@ -289,6 +393,12 @@ def errorhandler(e):
     if not isinstance(e, HTTPException):
         e = InternalServerError()
     return apology(e.name, e.code)
+
+
+def select_book(isbn):
+    """Select a single record from the book table by isbn"""
+    book_records = db.execute('SELECT * FROM book WHERE isbn = %s LIMIT 1', isbn)
+    return None if not book_records else Book(book_records[0])
 
 
 # Listen for errors
